@@ -982,7 +982,11 @@
 <script>
   /* ============ LOCK SCREEN ============ */
   (function(){
-    var OPEN_CODE = '020702';
+    var ACCOUNTS = {
+      '021911': 'Force Fortune',
+      '072211': 'kaley',
+      '020911': 'Lukw'
+    };
     var LOG_CODE = '0613';
     var LOG_KEY = 'gamehub_access_log';
 
@@ -1012,8 +1016,8 @@
       arr.forEach(function(entry, i){
         var li = document.createElement('li');
         var idx = document.createElement('span'); idx.className='li-idx'; idx.textContent = '#'+(i+1);
-        var tm = document.createElement('span'); tm.textContent = entry.time;
-        li.appendChild(idx); li.appendChild(tm);
+        var body = document.createElement('span'); body.textContent = (entry.user||'Unknown') + ' — ' + entry.time;
+        li.appendChild(idx); li.appendChild(body);
         list.appendChild(li);
       });
     }
@@ -1021,9 +1025,10 @@
     function tryUnlock(){
       var code = (input.value || '').trim();
       msgEl.textContent = '';
-      if(code === OPEN_CODE){
+      var user = ACCOUNTS[code];
+      if(user){
         var arr = readLog();
-        arr.unshift({ time: nowStamp() });
+        arr.unshift({ time: nowStamp(), user: user });
         writeLog(arr);
         overlay.classList.add('hidden');
         input.value = '';
