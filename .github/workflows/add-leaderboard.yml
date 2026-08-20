@@ -1,0 +1,170 @@
+name: Add shared leaderboards
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[leaderboard-patched]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Game Hub
+        env:
+          SUPABASE_URL: https://gywrmkluncycfxeffypc.supabase.co
+          SUPABASE_KEY: sb_publishable_LI8-YNwApCJSVL2EkB7dzA_ZIBLxe3s
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          if 'id="leaderboard-btn"' in s:
+              print('Leaderboard already installed')
+              raise SystemExit(0)
+          patch = r'''\n<!-- Shared online leaderboard -->
+<style>
+  #leaderboard-btn{position:fixed;top:14px;left:14px;z-index:500;padding:9px 13px;border-radius:999px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+  #leaderboard-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1800;align-items:center;justify-content:center;padding:16px}
+  #leaderboard-modal.active{display:flex}
+  .leaderboard-box{background:var(--card-bg);color:var(--app-text);border:1px solid var(--card-border);border-radius:14px;width:min(94vw,760px);max-height:88vh;overflow:auto;padding:20px;box-shadow:0 12px 35px rgba(0,0,0,.25)}
+  .leaderboard-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .leaderboard-head h2{margin:0;font-size:20px}
+  .leaderboard-note{font-size:13px;color:var(--muted);margin:0 0 14px}
+  .leaderboard-games{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .lb-game{border:1px solid var(--card-border);border-radius:10px;padding:12px;background:var(--card-bg)}
+  .lb-game h3{margin:0 0 8px;font-size:15px}
+  .lb-row{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;font-size:13px;padding:6px 0;border-top:1px solid var(--card-border)}
+  .lb-row:first-of-type{border-top:0}
+  .lb-rank{color:var(--muted)}
+  .lb-score{font-weight:700}
+  .lb-empty{font-size:13px;color:var(--muted)}
+  .lb-you{font-weight:700}
+  @media(max-width:520px){#leaderboard-btn{top:64px;left:14px}.leaderboard-box{max-height:82vh}.leaderboard-games{grid-template-columns:1fr}}
+</style>
+<button id="leaderboard-btn" type="button" title="View online leaderboards">🏆 Leaderboard</button>
+<div id="leaderboard-modal" class="modal-overlay">
+  <div class="leaderboard-box">
+    <div class="leaderboard-head"><h2>🏆 Leaderboards</h2><button id="leaderboard-close" type="button">Close</button></div>
+    <p class="leaderboard-note" id="leaderboard-note">Scores are shared online and separated by account and game.</p>
+    <div class="leaderboard-games" id="leaderboard-games"><div class="lb-empty">Loading…</div></div>
+  </div>
+</div>
+<script>
+(function(){
+  var SB_URL = 'https://gywrmkluncycfxeffypc.supabase.co';
+  var SB_KEY = 'sb_publishable_LI8-YNwApCJSVL2EkB7dzA_ZIBLxe3s';
+  var currentAccount = function(){ try{return sessionStorage.getItem('gamehub_account_code')||'';}catch(e){return '';} };
+  var games = {
+    'sudoku_easy': {name:'Sudoku — Easy', lower:true},
+    'sudoku_medium': {name:'Sudoku — Medium', lower:true},
+    'sudoku_hard': {name:'Sudoku — Hard', lower:true},
+    'memory': {name:'Memory', lower:true},
+    'ttt': {name:'Tic Tac Toe', lower:false},
+    'snake': {name:'Snake', lower:false},
+    'g2048': {name:'2048', lower:false},
+    'c4': {name:'Connect Four', lower:false},
+    'breakout': {name:'Breakout', lower:false},
+    'simon': {name:'Simon Says', lower:false},
+    'blast': {name:'Block Blast', lower:false},
+    'wordle': {name:'Wordle', lower:true},
+    'mines_easy': {name:'Mines — Easy', lower:true},
+    'mines_medium': {name:'Mines — Medium', lower:true},
+    'mines_hard': {name:'Mines — Hard', lower:true},
+    'tag': {name:'Tag', lower:false},
+    'cookie': {name:'Cookie Clicker', lower:false}
+  };
+  function headers(extra){return Object.assign({'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Accept':'application/json'},extra||{});}
+  async function getScores(){
+    var r=await fetch(SB_URL+'/rest/v1/game_scores?select=id,account_code,game_id,score,updated_at&order=updated_at.desc',{headers:headers()});
+    if(!r.ok) throw new Error('Leaderboard read failed: '+r.status);
+    return await r.json();
+  }
+  async function saveRemote(gameId,value,lower){
+    var code=currentAccount(); if(!code) return;
+    var q=SB_URL+'/rest/v1/game_scores?account_code=eq.'+encodeURIComponent(code)+'&game_id=eq.'+encodeURIComponent(gameId)+'&select=id,score';
+    var r=await fetch(q,{headers:headers()});
+    if(!r.ok) return;
+    var rows=await r.json();
+    var cur=rows[0];
+    var better=!cur || (lower ? value < Number(cur.score) : value > Number(cur.score));
+    if(!better) return;
+    if(cur){
+      await fetch(SB_URL+'/rest/v1/game_scores?id=eq.'+encodeURIComponent(cur.id),{method:'PATCH',headers:headers({'Prefer':'return=minimal'}),body:JSON.stringify({score:value,updated_at:new Date().toISOString()})});
+    }else{
+      await fetch(SB_URL+'/rest/v1/game_scores',{method:'POST',headers:headers({'Prefer':'return=minimal'}),body:JSON.stringify({account_code:code,game_id:gameId,score:value})});
+    }
+  }
+  function patchAccountCapture(){
+    document.addEventListener('click',function(e){
+      if(e.target && e.target.id==='lock-submit'){
+        var inp=document.getElementById('lock-input'); if(inp) try{sessionStorage.setItem('gamehub_account_code',(inp.value||'').trim());}catch(x){}
+      }
+    },true);
+    document.addEventListener('keydown',function(e){
+      if(e.key==='Enter' && document.activeElement && document.activeElement.id==='lock-input'){
+        try{sessionStorage.setItem('gamehub_account_code',(document.activeElement.value||'').trim());}catch(x){}
+      }
+    },true);
+  }
+  window.updateHigh=function(key,value,higherIsBetter){
+    var cur=null; try{cur=localStorage.getItem('gamehub_hs_'+key);cur=cur===null?null:parseFloat(cur);}catch(e){}
+    var better=cur===null || (higherIsBetter ? value>cur : value<cur);
+    if(better){try{localStorage.setItem('gamehub_hs_'+key,value);}catch(e){}; saveRemote(key,Number(value),!higherIsBetter).catch(function(){});}
+    return better?value:cur;
+  };
+  function formatScore(id,score){
+    if(id.indexOf('sudoku_')===0 || id.indexOf('mines_')===0) return score+'s';
+    if(id==='memory') return score+' moves';
+    if(id==='wordle') return score+'/6';
+    return String(score);
+  }
+  async function render(){
+    var box=document.getElementById('leaderboard-games');
+    box.innerHTML='<div class="lb-empty">Loading…</div>';
+    try{
+      var rows=await getScores();
+      var out='';
+      Object.keys(games).forEach(function(id){
+        var cfg=games[id];
+        var arr=rows.filter(function(r){return r.game_id===id;}).sort(function(a,b){return cfg.lower?Number(a.score)-Number(b.score):Number(b.score)-Number(a.score);}).slice(0,5);
+        out+='<section class="lb-game"><h3>'+cfg.name+'</h3>';
+        if(!arr.length){out+='<div class="lb-empty">No scores yet.</div>';}else{
+          arr.forEach(function(r,i){
+            var you=currentAccount() && r.account_code===currentAccount();
+            out+='<div class="lb-row'+(you?' lb-you':'')+'"><span class="lb-rank">#'+(i+1)+'</span><span>'+String(r.account_code).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];})+'</span><span class="lb-score">'+formatScore(id,r.score)+'</span></div>';
+          });
+        }
+        out+='</section>';
+      });
+      box.innerHTML=out;
+      var note=document.getElementById('leaderboard-note');
+      note.textContent=currentAccount()?'Signed in as '+currentAccount()+'. Scores are shared online and separated by game.':'Scores are shared online and separated by account and game.';
+    }catch(e){box.innerHTML='<div class="lb-empty">Could not load the online leaderboard. Please try again.</div>';}
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    patchAccountCapture();
+    document.getElementById('leaderboard-btn').addEventListener('click',function(){document.getElementById('leaderboard-modal').classList.add('active');render();});
+    document.getElementById('leaderboard-close').addEventListener('click',function(){document.getElementById('leaderboard-modal').classList.remove('active');});
+    document.getElementById('leaderboard-modal').addEventListener('click',function(e){if(e.target.id==='leaderboard-modal')e.currentTarget.classList.remove('active');});
+  });
+})();
+</script>
+'''
+          patch = patch.replace('https://gywrmkluncycfxeffypc.supabase.co', os.environ['SUPABASE_URL']).replace('sb_publishable_LI8-YNwApCJSVL2EkB7dzA_ZIBLxe3s', os.environ['SUPABASE_KEY'])
+          s = s.replace('</body>', patch + '\n</body>')
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit leaderboard update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Add shared online game leaderboards [leaderboard-patched]"
+          git push
