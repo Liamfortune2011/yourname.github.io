@@ -585,7 +585,7 @@
   </div>
 
   <!-- ACCESS LOG MODAL -->
-  <div id="log-modal" class="modal-overlay">
+  <div id="log-modal" class="modal-overlay" style="z-index:1500;">
     <div class="log-box">
       <h3>📋 Access Log</h3>
       <div class="log-meta" id="log-meta"></div>
@@ -632,6 +632,14 @@
           <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
           <option value="'Comic Sans MS', 'Comic Sans', cursive">Comic Sans</option>
         </select>
+      </div>
+      <div class="settings-row" style="margin-top:0.25rem;">
+        <button id="settings-log-btn" style="font-size:12px; padding:6px 12px; width:100%;">📋 Access log</button>
+        <div id="settings-log-entry" style="display:none; margin-top:8px; gap:6px; align-items:center;">
+          <input id="settings-log-input" type="password" inputmode="numeric" maxlength="6" placeholder="code" style="flex:1; font-size:14px; padding:7px 8px; border-radius:6px; border:1px solid var(--card-border); background:var(--hover-bg); color:var(--app-text); text-align:center; letter-spacing:4px;">
+          <button id="settings-log-go" style="font-size:12px; padding:7px 12px;">Open</button>
+        </div>
+        <div id="settings-log-msg" style="font-size:12px; color:var(--danger); margin-top:6px; min-height:14px;"></div>
       </div>
       <div class="modal-btns">
         <button id="settings-close-btn" style="flex:1;">Done</button>
@@ -1013,12 +1021,6 @@
     function tryUnlock(){
       var code = (input.value || '').trim();
       msgEl.textContent = '';
-      if(code === LOG_CODE){
-        input.value = '';
-        renderLog();
-        logModal.classList.add('active');
-        return;
-      }
       if(code === OPEN_CODE){
         var arr = readLog();
         arr.unshift({ time: nowStamp() });
@@ -1044,6 +1046,32 @@
       document.getElementById('log-clear-btn').addEventListener('click', function(){
         if(confirm('Clear all access log entries?')){ writeLog([]); renderLog(); }
       });
+      var logBtn = document.getElementById('settings-log-btn');
+      var logEntry = document.getElementById('settings-log-entry');
+      var logInput = document.getElementById('settings-log-input');
+      var logMsg = document.getElementById('settings-log-msg');
+      logBtn.addEventListener('click', function(){
+        logEntry.style.display = 'flex';
+        logMsg.textContent = '';
+        logInput.value = '';
+        logInput.focus();
+      });
+      function openLogFromSettings(){
+        var code = (logInput.value || '').trim();
+        if(code === LOG_CODE){
+          logInput.value = '';
+          logMsg.textContent = '';
+          logEntry.style.display = 'none';
+          renderLog();
+          logModal.classList.add('active');
+        } else {
+          logMsg.textContent = 'Incorrect code';
+          logInput.value = '';
+          logInput.focus();
+        }
+      }
+      document.getElementById('settings-log-go').addEventListener('click', function(e){ e.preventDefault(); openLogFromSettings(); });
+      logInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); openLogFromSettings(); } });
       input.focus();
     });
   })();
