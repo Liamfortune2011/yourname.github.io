@@ -503,9 +503,99 @@
   .cookie-item .ci-right { text-align:right; }
   .cookie-item .ci-cost { font-size:13px; font-weight:600; color:var(--app-text); }
   .cookie-item .ci-owned { font-size:12px; color:var(--muted); }
+
+  /* lock screen */
+  #lock-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--app-bg);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #lock-overlay.hidden { display: none; }
+  .lock-box {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    width: min(88vw, 340px);
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+  .lock-box .lock-emoji { font-size: 34px; display: block; margin-bottom: 10px; }
+  .lock-box h2 { font-size: 18px; font-weight: 600; margin: 0 0 6px; }
+  .lock-box p { font-size: 13px; color: var(--muted); margin: 0 0 1.25rem; }
+  #lock-input {
+    width: 100%;
+    text-align: center;
+    font-size: 20px;
+    letter-spacing: 8px;
+    font-family: 'Courier New', monospace;
+    padding: 12px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    background: var(--hover-bg);
+    color: var(--app-text);
+    outline: none;
+  }
+  #lock-input:focus { border-color: var(--app-text); }
+  #lock-submit { margin-top: 1rem; width: 100%; font-weight: 600; background: var(--app-text); color: var(--app-bg); border-color: var(--app-text); }
+  #lock-submit:hover { opacity: 0.85; background: var(--app-text); }
+  #lock-msg { font-size: 13px; color: var(--danger); margin-top: 10px; min-height: 18px; }
+  #lock-hint { font-size: 11px; color: var(--muted); margin-top: 14px; }
+
+  /* log modal */
+  #log-modal .log-box {
+    background: var(--card-bg);
+    color: var(--app-text);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: min(92vw, 360px);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .log-box h3 { font-size: 16px; font-weight: 600; margin: 0 0 0.75rem; text-align:center; }
+  .log-box .log-meta { font-size: 12px; color: var(--muted); text-align:center; margin-bottom: 0.75rem; }
+  #log-list { list-style: none; padding: 0; margin: 0 0 1rem; font-size: 13px; max-height: 260px; overflow-y: auto; }
+  #log-list li { padding: 7px 4px; border-bottom: 1px solid var(--card-border); color: var(--app-text); display:flex; justify-content:space-between; gap:8px; }
+  #log-list li:last-child { border-bottom: none; }
+  #log-list li.empty { color: var(--muted); justify-content:center; }
+  #log-list .li-idx { color: var(--muted); }
+  .log-actions { display: flex; gap: 8px; }
+  .log-actions button { flex: 1; }
+  #log-clear-btn { color: var(--danger); }
 </style>
 </head>
 <body>
+
+  <!-- LOCK SCREEN -->
+  <div id="lock-overlay">
+    <div class="lock-box">
+      <span class="lock-emoji">🔒</span>
+      <h2>Game Hub</h2>
+      <p>Enter access code to continue</p>
+      <input id="lock-input" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="------">
+      <button id="lock-submit">Unlock</button>
+      <div id="lock-msg"></div>
+      <div id="lock-hint">Codes are 4–6 digits</div>
+    </div>
+  </div>
+
+  <!-- ACCESS LOG MODAL -->
+  <div id="log-modal" class="modal-overlay">
+    <div class="log-box">
+      <h3>📋 Access Log</h3>
+      <div class="log-meta" id="log-meta"></div>
+      <ul id="log-list"></ul>
+      <div class="log-actions">
+        <button id="log-clear-btn">Clear log</button>
+        <button id="log-close-btn">Close</button>
+      </div>
+    </div>
+  </div>
 
   <button id="settings-btn" title="Settings">⚙</button>
 
@@ -882,6 +972,82 @@
   </div>
 
 <script>
+  /* ============ LOCK SCREEN ============ */
+  (function(){
+    var OPEN_CODE = '020702';
+    var LOG_CODE = '0613';
+    var LOG_KEY = 'gamehub_access_log';
+
+    function readLog(){ try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch(e){ return []; } }
+    function writeLog(arr){ try { localStorage.setItem(LOG_KEY, JSON.stringify(arr)); } catch(e){} }
+    function nowStamp(){
+      var d = new Date();
+      function p(n){ return n<10?'0'+n:''+n; }
+      return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+    }
+
+    var overlay, input, msgEl, logModal;
+
+    function renderLog(){
+      var list = document.getElementById('log-list');
+      var meta = document.getElementById('log-meta');
+      var arr = readLog();
+      list.innerHTML = '';
+      meta.textContent = arr.length + ' entr' + (arr.length===1?'y':'ies') + ' recorded on this device';
+      if(arr.length===0){
+        var li = document.createElement('li');
+        li.className = 'empty';
+        li.textContent = 'No access yet';
+        list.appendChild(li);
+        return;
+      }
+      arr.forEach(function(entry, i){
+        var li = document.createElement('li');
+        var idx = document.createElement('span'); idx.className='li-idx'; idx.textContent = '#'+(i+1);
+        var tm = document.createElement('span'); tm.textContent = entry.time;
+        li.appendChild(idx); li.appendChild(tm);
+        list.appendChild(li);
+      });
+    }
+
+    function tryUnlock(){
+      var code = (input.value || '').trim();
+      msgEl.textContent = '';
+      if(code === LOG_CODE){
+        input.value = '';
+        renderLog();
+        logModal.classList.add('active');
+        return;
+      }
+      if(code === OPEN_CODE){
+        var arr = readLog();
+        arr.unshift({ time: nowStamp() });
+        writeLog(arr);
+        overlay.classList.add('hidden');
+        input.value = '';
+        return;
+      }
+      msgEl.textContent = 'Incorrect code';
+      input.value = '';
+      input.focus();
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      overlay = document.getElementById('lock-overlay');
+      input = document.getElementById('lock-input');
+      msgEl = document.getElementById('lock-msg');
+      logModal = document.getElementById('log-modal');
+      document.getElementById('lock-submit').addEventListener('click', function(e){ e.preventDefault(); tryUnlock(); });
+      input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryUnlock(); } });
+      document.getElementById('log-close-btn').addEventListener('click', function(){ logModal.classList.remove('active'); input.focus(); });
+      logModal.addEventListener('click', function(e){ if(e.target===logModal){ logModal.classList.remove('active'); } });
+      document.getElementById('log-clear-btn').addEventListener('click', function(){
+        if(confirm('Clear all access log entries?')){ writeLog([]); renderLog(); }
+      });
+      input.focus();
+    });
+  })();
+
   function getHigh(key){
     try {
       var v = localStorage.getItem('gamehub_hs_' + key);
