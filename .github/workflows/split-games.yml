@@ -1,6 +1,9 @@
 name: Split games into modules
 
 on:
+  push:
+    branches:
+      - refactor/games-into-files
   workflow_dispatch:
 
 permissions:
@@ -13,10 +16,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: refactor/games-into-files
           fetch-depth: 0
 
       - name: Split game sections
         run: python tools/split_games.py
+
+      - name: Check JavaScript syntax
+        run: |
+          set -e
+          for f in games/*.js; do
+            node --check "$f"
+          done
 
       - name: Commit generated modules
         run: |
