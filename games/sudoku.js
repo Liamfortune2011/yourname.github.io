@@ -31,13 +31,16 @@
       for(var i=0;i<removeCount;i++){ var rc=cells[i]; puzzle[rc[0]][rc[1]]=0; }
       return puzzle;
     }
+
     var solution=null, puzzle=null, currentDiff='easy';
     var boardEl, statusEl, timeEl, bestEl;
     var elapsed = 0, timerInterval = null, solved = false;
+
     function formatTime(s){
       var m = Math.floor(s/60), sec = s%60;
       return m + ':' + (sec<10 ? '0' : '') + sec;
     }
+
     function renderBoard(){
       boardEl.innerHTML='';
       for(var r=0;r<9;r++){
@@ -56,7 +59,9 @@
             cell.classList.add('given');
           } else {
             var input=document.createElement('input');
-            input.type='text'; input.maxLength=1; input.inputMode='numeric';
+            input.type='text';
+            input.maxLength=1;
+            input.inputMode='numeric';
             input.dataset.r=r; input.dataset.c=c;
             input.addEventListener('input', function(e){
               var v=e.target.value.replace(/[^1-9]/g,'');
@@ -71,34 +76,64 @@
         }
       }
     }
+
     window.newPuzzle = function(diff){
       currentDiff=diff;
-      document.querySelectorAll('.diff-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.diff===diff); });
-      solution=makeSolved(); puzzle=makePuzzle(solution, diffRemove[diff]);
-      statusEl.textContent=''; solved=false; elapsed=0; timeEl.textContent='0:00';
-      var best=getHigh('sudoku_'+diff); bestEl.textContent=best===null?'–':formatTime(best);
+      document.querySelectorAll('.diff-btn').forEach(function(b){
+        b.classList.toggle('active', b.dataset.diff===diff);
+      });
+      solution=makeSolved();
+      puzzle=makePuzzle(solution, diffRemove[diff]);
+      statusEl.textContent='';
+      solved = false;
+      elapsed = 0;
+      timeEl.textContent = '0:00';
+      var best = getHigh('sudoku_' + diff);
+      bestEl.textContent = best===null ? '–' : formatTime(best);
       if(timerInterval) clearInterval(timerInterval);
-      timerInterval=setInterval(function(){ if(solved) return; elapsed++; timeEl.textContent=formatTime(elapsed); },1000);
+      timerInterval = setInterval(function(){
+        if(solved) return;
+        elapsed++;
+        timeEl.textContent = formatTime(elapsed);
+      }, 1000);
       renderBoard();
     };
+
     function checkBoard(){
-      var inputs=boardEl.querySelectorAll('input'); var correct=0, wrong=0, empty=0;
+      var inputs=boardEl.querySelectorAll('input');
+      var correct=0, wrong=0, empty=0;
       inputs.forEach(function(input){
-        var r=+input.dataset.r,c=+input.dataset.c,val=input.value;
+        var r=+input.dataset.r, c=+input.dataset.c;
+        var val=input.value;
         input.classList.remove('correct','wrong');
         if(!val){ empty++; return; }
         if(+val===solution[r][c]){ correct++; input.classList.add('correct'); }
         else { wrong++; input.classList.add('wrong'); }
       });
-      if(wrong===0&&empty===0){
-        statusEl.textContent='Solved! Nice work.'; statusEl.style.color='#27500a';
-        if(!solved){ solved=true; clearInterval(timerInterval); var best=updateHigh('sudoku_'+currentDiff,elapsed,false); bestEl.textContent=formatTime(best); }
-      } else { statusEl.textContent=correct+' correct, '+wrong+' wrong, '+empty+' empty'; statusEl.style.color='var(--muted)'; }
+      if(wrong===0 && empty===0){
+        statusEl.textContent='Solved! Nice work.';
+        statusEl.style.color='#27500a';
+        if(!solved){
+          solved = true;
+          clearInterval(timerInterval);
+          var best = updateHigh('sudoku_' + currentDiff, elapsed, false);
+          bestEl.textContent = formatTime(best);
+        }
+      } else {
+        statusEl.textContent=correct+' correct, '+wrong+' wrong, '+empty+' empty';
+        statusEl.style.color='var(--muted)';
+      }
     }
-    document.addEventListener('DOMContentLoaded',function(){
-      boardEl=document.getElementById('board'); statusEl=document.getElementById('status-msg'); timeEl=document.getElementById('sudoku-time-val'); bestEl=document.getElementById('sudoku-best-val');
-      document.querySelectorAll('.diff-btn').forEach(function(b){ b.addEventListener('click',function(){newPuzzle(b.dataset.diff);}); });
-      document.getElementById('check-btn').addEventListener('click',checkBoard);
-      document.getElementById('new-btn').addEventListener('click',function(){confirmReset(function(){newPuzzle(currentDiff);});});
+
+    document.addEventListener('DOMContentLoaded', function(){
+      boardEl=document.getElementById('board');
+      statusEl=document.getElementById('status-msg');
+      timeEl=document.getElementById('sudoku-time-val');
+      bestEl=document.getElementById('sudoku-best-val');
+      document.querySelectorAll('.diff-btn').forEach(function(b){
+        b.addEventListener('click', function(){ newPuzzle(b.dataset.diff); });
+      });
+      document.getElementById('check-btn').addEventListener('click', checkBoard);
+      document.getElementById('new-btn').addEventListener('click', function(){ confirmReset(function(){ newPuzzle(currentDiff); }); });
     });
   })();
