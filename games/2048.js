@@ -1,35 +1,15 @@
 /* 2048 */
-  #g2048-score { font-size: 14px; color: var(--muted); margin-bottom: 1.25rem; }
-  #g2048-board {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    width: min(85vw, 320px);
-    aspect-ratio: 1;
-    background: #d3d1c7;
-    border-radius: 10px;
-    padding: 8px;
-    margin-bottom: 1.25rem;
-  }
-  .tile {
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 20px;
-    background: #eeede8;
-    color: #2c2c2a;
-  }
-  .tile[data-v="2"] { background: #f2f0e6; }
-  .tile[data-v="4"] { background: #ece3cc; }
-  .tile[data-v="8"] { background: #e8b878; color: #fff; }
-  .tile[data-v="16"] { background: #e59563; color: #fff; }
-  .tile[data-v="32"] { background: #e07a5f; color: #fff; }
-  .tile[data-v="64"] { background: #db5a3c; color: #fff; }
-  .tile[data-v="128"] { background: #e8c86e; color: #fff; font-size: 17px; }
-  .tile[data-v="256"] { background: #e5c25c; color: #fff; font-size: 17px; }
-  .tile[data-v="512"] { background: #e2bd4a; color: #fff; font-size: 17px; }
-  .tile[data-v="1024"] { background: #dfb838; color: #fff; font-size: 15px; }
-  .tile[data-v="2048"] { background: #2c2c2a; color: #fff; font-size: 15px; }
-  #g2048-msg { font-size: 13px; color: var(--muted); margin-top: -0.75rem; margin-bottom: 1rem; min-height: 18px; }
+(function(){
+  var boardEl, scoreEl, bestEl, msgEl;
+  var board = [], score = 0;
+  window.new2048Game = function(){
+    boardEl=document.getElementById('g2048-board'); scoreEl=document.getElementById('g2048-score-val'); bestEl=document.getElementById('g2048-best-val'); msgEl=document.getElementById('g2048-msg');
+    board=Array.from({length:4},()=>Array(4).fill(0)); score=0; msgEl.textContent=''; spawnTile(); spawnTile(); render();
+  };
+  function spawnTile(){ var empty=[]; for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!board[r][c])empty.push([r,c]); if(!empty.length)return; var p=empty[Math.floor(Math.random()*empty.length)]; board[p[0]][p[1]]=Math.random()<.9?2:4; }
+  function render(){ boardEl.innerHTML=''; for(var r=0;r<4;r++)for(var c=0;c<4;c++){var el=document.createElement('div'); el.className='tile'; el.dataset.v=board[r][c]; el.textContent=board[r][c]||''; boardEl.appendChild(el);} scoreEl.textContent=score; var best=updateHigh('2048',score,true); bestEl.textContent=best===null?'–':best; }
+  function slideRow(row){ var a=row.filter(Boolean), out=[]; for(var i=0;i<a.length;i++){if(a[i]===a[i+1]){var v=a[i]*2;out.push(v);score+=v;i++;}else out.push(a[i]);} while(out.length<4)out.push(0); return out; }
+  function move(dir){ var old=JSON.stringify(board); if(dir==='left')for(var r=0;r<4;r++)board[r]=slideRow(board[r]); if(dir==='right')for(var r=0;r<4;r++)board[r]=slideRow(board[r].reverse()).reverse(); if(dir==='up'||dir==='down'){for(var c=0;c<4;c++){var col=[];for(var r=0;r<4;r++)col.push(board[r][c]);if(dir==='down')col.reverse();col=slideRow(col);if(dir==='down')col.reverse();for(var r=0;r<4;r++)board[r][c]=col[r];}} if(JSON.stringify(board)!==old){spawnTile();render();} }
+  document.addEventListener('keydown',function(e){if(!document.getElementById('view-2048')?.classList.contains('active'))return; var d={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'}[e.key];if(d){e.preventDefault();move(d);}});
+  document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('g2048-new-btn');if(b)b.addEventListener('click',function(){confirmReset(function(){new2048Game();});});});
+})();
