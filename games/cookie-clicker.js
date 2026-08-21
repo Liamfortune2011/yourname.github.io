@@ -1,239 +1,752 @@
-/* ============ COOKIE CLICKER ============ */
+/* cookie clicker */
+  .cookie-wrap { display:flex; gap:28px; width:100%; max-width:760px; flex-wrap:wrap; justify-content:center; align-items:flex-start; }
+  .cookie-left { flex:1 1 240px; min-width:230px; display:flex; flex-direction:column; align-items:center; }
+  .cookie-right { flex:1 1 280px; min-width:260px; }
+  #cookie-count { font-size:30px; font-weight:700; line-height:1.15; text-align:center; color:var(--app-text); }
+  #cookie-cps { font-size:13px; color:var(--muted); margin-bottom:1.1rem; }
+  #big-cookie-wrap { position:relative; width:190px; height:190px; }
+  #big-cookie {
+    position:absolute; inset:0; border-radius:50%; cursor:pointer; user-select:none; -webkit-tap-highlight-color: transparent;
+    background:
+      radial-gradient(circle at 30% 66%, rgba(107,67,26,0.55) 0 6px, transparent 7px),
+      radial-gradient(circle at 62% 74%, rgba(107,67,26,0.55) 0 5px, transparent 6px),
+      radial-gradient(circle at 74% 40%, rgba(107,67,26,0.55) 0 6px, transparent 7px),
+      radial-gradient(circle at 46% 30%, rgba(107,67,26,0.55) 0 5px, transparent 6px),
+      radial-gradient(circle at 22% 42%, rgba(107,67,26,0.55) 0 4px, transparent 5px),
+      radial-gradient(circle at 55% 52%, rgba(107,67,26,0.55) 0 6px, transparent 7px),
+      radial-gradient(circle at 35% 30%, #e8c88a, #c68e3f 55%, #8a5a24 100%);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.28), inset 0 -6px 10px rgba(0,0,0,0.18);
+    border: 6px solid #6b431a;
+    transition: transform 0.06s ease-out;
+  }
+  #big-cookie:active { transform: scale(0.93); }
+  .cookie-float {
+    position:absolute; pointer-events:none; font-weight:700; color:#6b431a; font-size:15px;
+    animation: cookieFloatUp 0.85s ease-out forwards; white-space:nowrap;
+  }
+  @keyframes cookieFloatUp { from { opacity:1; transform:translateY(0); } to { opacity:0; transform:translateY(-46px); } }
+  #golden-cookie {
+    position:absolute; width:52px; height:52px; border-radius:50%; display:none; cursor:pointer;
+    background: radial-gradient(circle at 35% 30%, #fff7d0, #e8c86e 55%, #c9a227 100%);
+    box-shadow: 0 0 4px 2px rgba(232,200,110,0.7), 0 0 20px rgba(232,200,110,0.55);
+    border: 3px solid #b8912a;
+    animation: goldenPulse 0.9s ease-in-out infinite alternate;
+    z-index: 5;
+  }
+  @keyframes goldenPulse { from { transform:scale(1); } to { transform:scale(1.12); } }
+  #cookie-stats-panel { font-size:12.5px; color:var(--muted); margin-top:1rem; text-align:center; line-height:1.7; }
+  #cookie-stats-panel b { color:var(--app-text); }
+  #cookie-buff-msg { font-size:13px; font-weight:600; color:#b8912a; min-height:18px; margin-top:4px; }
+  .cookie-section-label { font-size:13px; color:var(--muted); margin-bottom:6px; }
+  #cookie-upgrades { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; min-height: 44px; }
+  .cookie-upg {
+    width:42px; height:42px; border-radius:9px; background:var(--card-bg); border:1px solid var(--card-border);
+    display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer; position:relative;
+  }
+  .cookie-upg:hover:not(.disabled) { border-color:var(--app-text); }
+  .cookie-upg.disabled { opacity:0.35; cursor:default; }
+  .cookie-store { display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto; padding-right:4px; }
+  .cookie-item {
+    display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--card-bg);
+    border:1px solid var(--card-border); border-radius:10px; padding:10px 12px; cursor:pointer; text-align:left;
+  }
+  .cookie-item:hover:not(.disabled) { border-color:var(--app-text); }
+  .cookie-item.disabled { opacity:0.45; cursor:default; }
+  .cookie-item .ci-name { font-weight:600; font-size:14px; color:var(--app-text); }
+  .cookie-item .ci-sub { font-size:12px; color:var(--muted); }
+  .cookie-item .ci-right { text-align:right; }
+  .cookie-item .ci-cost { font-size:13px; font-weight:600; color:var(--app-text); }
+  .cookie-item .ci-owned { font-size:12px; color:var(--muted); }
+
+  /* lock screen */
+  #lock-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--app-bg);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #lock-overlay.hidden { display: none; }
+  .lock-box {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    width: min(88vw, 340px);
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+  .lock-box .lock-emoji { font-size: 34px; display: block; margin-bottom: 10px; }
+  .lock-box h2 { font-size: 18px; font-weight: 600; margin: 0 0 6px; }
+  .lock-box p { font-size: 13px; color: var(--muted); margin: 0 0 1.25rem; }
+  #lock-input {
+    width: 100%;
+    text-align: center;
+    font-size: 20px;
+    letter-spacing: 8px;
+    font-family: 'Courier New', monospace;
+    padding: 12px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    background: var(--hover-bg);
+    color: var(--app-text);
+    outline: none;
+  }
+  #lock-input:focus { border-color: var(--app-text); }
+  #lock-submit { margin-top: 1rem; width: 100%; font-weight: 600; background: var(--app-text); color: var(--app-bg); border-color: var(--app-text); }
+  #lock-submit:hover { opacity: 0.85; background: var(--app-text); }
+  #lock-msg { font-size: 13px; color: var(--danger); margin-top: 10px; min-height: 18px; }
+  #lock-hint { font-size: 11px; color: var(--muted); margin-top: 14px; }
+
+  /* log modal */
+  #log-modal .log-box {
+    background: var(--card-bg);
+    color: var(--app-text);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: min(92vw, 360px);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .log-box h3 { font-size: 16px; font-weight: 600; margin: 0 0 0.75rem; text-align:center; }
+  .log-box .log-meta { font-size: 12px; color: var(--muted); text-align:center; margin-bottom: 0.75rem; }
+  #log-list { list-style: none; padding: 0; margin: 0 0 1rem; font-size: 13px; max-height: 260px; overflow-y: auto; }
+  #log-list li { padding: 7px 4px; border-bottom: 1px solid var(--card-border); color: var(--app-text); display:flex; justify-content:space-between; gap:8px; }
+  #log-list li:last-child { border-bottom: none; }
+  #log-list li.empty { color: var(--muted); justify-content:center; }
+  #log-list .li-idx { color: var(--muted); }
+  .log-actions { display: flex; gap: 8px; }
+  .log-actions button { flex: 1; }
+  #log-clear-btn { color: var(--danger); }
+</style>
+</head>
+<body>
+
+  <!-- LOCK SCREEN -->
+  <div id="lock-overlay">
+    <div class="lock-box">
+      <span class="lock-emoji">🔒</span>
+      <h2>Game Hub</h2>
+      <p>Enter access code to continue</p>
+      <input id="lock-input" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="------">
+      <button id="lock-submit">Unlock</button>
+      <div id="lock-msg"></div>
+      <div id="lock-hint">Codes are 4–6 digits</div>
+    </div>
+  </div>
+
+  <!-- ACCESS LOG MODAL -->
+  <div id="log-modal" class="modal-overlay" style="z-index:1500;">
+    <div class="log-box">
+      <h3>📋 Access Log</h3>
+      <div class="log-meta" id="log-meta"></div>
+      <ul id="log-list"></ul>
+      <div class="log-actions">
+        <button id="log-clear-btn">Clear log</button>
+        <button id="log-close-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="settings-btn" title="Settings">⚙</button>
+
+  <div id="modal-overlay" class="modal-overlay">
+    <div id="modal-box" class="modal-box">
+      <p>Are you sure you want to reset?</p>
+      <div class="modal-btns">
+        <button id="modal-cancel-btn">Cancel</button>
+        <button id="modal-confirm-btn">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-overlay" class="modal-overlay">
+    <div class="modal-box">
+      <p style="margin-bottom:1rem; font-weight:600;">Settings</p>
+      <div class="settings-row">
+        <label>Theme</label>
+        <div class="diff-row">
+          <button data-theme="light" class="theme-btn">Light</button>
+          <button data-theme="dark" class="theme-btn">Dark</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>Text color</label>
+        <input type="color" id="setting-text-color" value="#2c2c2a">
+      </div>
+      <div class="settings-row">
+        <label>Font</label>
+        <select id="setting-font">
+          <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">Default (Sans-serif)</option>
+          <option value="Georgia, 'Times New Roman', serif">Serif</option>
+          <option value="'Courier New', monospace">Monospace</option>
+          <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+          <option value="'Comic Sans MS', 'Comic Sans', cursive">Comic Sans</option>
+        </select>
+      </div>
+      <div class="settings-row" style="margin-top:0.25rem;">
+        <button id="settings-log-btn" style="font-size:12px; padding:6px 12px; width:100%;">📋 Access log</button>
+        <div id="settings-log-entry" style="display:none; margin-top:8px; gap:6px; align-items:center;">
+          <input id="settings-log-input" type="password" inputmode="numeric" maxlength="6" placeholder="code" style="flex:1; font-size:14px; padding:7px 8px; border-radius:6px; border:1px solid var(--card-border); background:var(--hover-bg); color:var(--app-text); text-align:center; letter-spacing:4px;">
+          <button id="settings-log-go" style="font-size:12px; padding:7px 12px;">Open</button>
+        </div>
+        <div id="settings-log-msg" style="font-size:12px; color:var(--danger); margin-top:6px; min-height:14px;"></div>
+      </div>
+      <div class="modal-btns">
+        <button id="settings-close-btn" style="flex:1;">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUB -->
+  <div class="view active" id="view-hub">
+    <h1>Game Hub</h1>
+    <p class="sub">Pick a game to play</p>
+    <div class="grid">
+      <div class="card" onclick="showView('sudoku')">
+        <span class="emoji">🔢</span>
+        <h2>Sudoku</h2>
+        <p>Four difficulty levels, check your answers as you go.</p>
+      </div>
+      <div class="card" onclick="showView('memory')">
+        <span class="emoji">🃏</span>
+        <h2>Memory match</h2>
+        <p>Flip cards, find the pairs, beat your move count.</p>
+      </div>
+      <div class="card" onclick="showView('ttt')">
+        <span class="emoji">⭕</span>
+        <h2>Tic-tac-toe</h2>
+        <p>Classic 2-player, first to three in a row wins.</p>
+      </div>
+      <div class="card" onclick="showView('snake')">
+        <span class="emoji">🐍</span>
+        <h2>Snake</h2>
+        <p>Arrow keys to steer, eat the dots, don't hit yourself.</p>
+      </div>
+      <div class="card" onclick="showView('2048')">
+        <span class="emoji">🔢</span>
+        <h2>2048</h2>
+        <p>Slide tiles, merge matching numbers, reach 2048.</p>
+      </div>
+      <div class="card" onclick="showView('c4')">
+        <span class="emoji">🔴</span>
+        <h2>Connect Four</h2>
+        <p>Drop discs, 2-player, first to connect four wins.</p>
+      </div>
+      <div class="card" onclick="showView('breakout')">
+        <span class="emoji">🕹️</span>
+        <h2>Breakout</h2>
+        <p>Move the paddle, bounce the ball, clear every brick.</p>
+      </div>
+      <div class="card" onclick="showView('simon')">
+        <span class="emoji">🎵</span>
+        <h2>Simon Says</h2>
+        <p>Watch the pattern, repeat it back, it gets longer each round.</p>
+      </div>
+      <div class="card" onclick="showView('blast')">
+        <span class="emoji">🧱</span>
+        <h2>Block Blast</h2>
+        <p>Drop pieces onto the grid, clear full rows and columns.</p>
+      </div>
+      <div class="card" onclick="showView('wordle')">
+        <span class="emoji">🟩</span>
+        <h2>Wordle</h2>
+        <p>Guess the 5-letter word in 6 tries.</p>
+      </div>
+      <div class="card" onclick="showView('mines')">
+        <span class="emoji">💣</span>
+        <h2>Minesweeper</h2>
+        <p>Clear the board without hitting a mine.</p>
+      </div>
+      <div class="card" onclick="showView('tag')">
+        <span class="emoji">🏃</span>
+        <h2>Tag</h2>
+        <p>2-player platformer tag with wall-jumps, bounce pads, and power-ups.</p>
+      </div>
+      <div class="card" onclick="showView('cookie')">
+        <span class="emoji">🍪</span>
+        <h2>Cookie Clicker</h2>
+        <p>Click the cookie, buy buildings, watch the numbers grow.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUDOKU -->
+  <div class="view" id="view-sudoku">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Sudoku</h2>
+    <div class="diff-row">
+      <button data-diff="easy" class="diff-btn">Easy</button>
+      <button data-diff="medium" class="diff-btn">Medium</button>
+      <button data-diff="hard" class="diff-btn">Hard</button>
+      <button data-diff="xtra" class="diff-btn">Extra hard</button>
+    </div>
+    <div class="stats">
+      <span>Time: <b id="sudoku-time-val">0:00</b></span>
+      <span>Best: <b id="sudoku-best-val">–</b></span>
+    </div>
+    <div id="board"></div>
+    <div class="controls">
+      <button id="check-btn"><b>Check</b></button>
+      <button id="new-btn">New puzzle</button>
+      <span id="status-msg"></span>
+    </div>
+  </div>
+
+  <!-- MEMORY -->
+  <div class="view" id="view-memory">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Memory match</h2>
+    <div class="stats">
+      <span>Moves: <b id="moves">0</b></span>
+      <span>Pairs: <b id="pairs">0</b>/8</span>
+      <span>Best: <b id="mem-best-val">–</b></span>
+    </div>
+    <div id="mem-board"></div>
+    <button id="mem-new-btn">New game</button>
+    <div id="win-msg"></div>
+  </div>
+
+  <!-- TIC TAC TOE -->
+  <div class="view" id="view-ttt">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Tic-tac-toe</h2>
+    <div class="diff-row">
+      <button data-mode="2p" class="ttt-mode-btn">2 Players</button>
+      <button data-mode="1p" class="ttt-mode-btn">vs Computer</button>
+    </div>
+    <div id="turn"></div>
+    <div class="stats" style="margin-bottom:1rem;"><span>Best win streak: <b id="ttt-best-val">0</b></span></div>
+    <div id="ttt-board"></div>
+    <button id="ttt-new-btn">New game</button>
+  </div>
+
+  <!-- SNAKE -->
+  <div class="view" id="view-snake">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Snake</h2>
+    <div class="diff-row">
+      <button data-speed="170" class="snake-speed-btn">Slow</button>
+      <button data-speed="110" class="snake-speed-btn">Medium</button>
+      <button data-speed="70" class="snake-speed-btn">Fast</button>
+      <button data-speed="40" class="snake-speed-btn">Extreme</button>
+    </div>
+    <div class="diff-row" style="align-items:center;">
+      <label style="font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:6px 12px;">
+        Snake color
+        <input type="color" id="snake-color" value="#2c2c2a" style="border:none; width:28px; height:22px; padding:0; background:none; cursor:pointer;">
+      </label>
+      <label style="font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px; background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; padding:6px 12px;">
+        Board color
+        <input type="color" id="snake-bg-color" value="#ffffff" style="border:none; width:28px; height:22px; padding:0; background:none; cursor:pointer;">
+      </label>
+    </div>
+    <div class="diff-row">
+      <button data-food="dot" class="snake-food-btn">Dot</button>
+      <button data-food="apple" class="snake-food-btn">🍎 Apple</button>
+      <button data-food="star" class="snake-food-btn">⭐ Star</button>
+      <button data-food="square" class="snake-food-btn">Square</button>
+    </div>
+    <div class="diff-row">
+      <span style="font-size:13px; color:var(--muted); align-self:center;">Food count</span>
+      <button data-count="1" class="snake-count-btn">1</button>
+      <button data-count="3" class="snake-count-btn">3</button>
+      <button data-count="5" class="snake-count-btn">5</button>
+    </div>
+    <div class="diff-row">
+      <button id="snake-wrap-btn" data-wrap="off">Walls: Solid</button>
+    </div>
+    <div id="snake-score">Score: <b id="snake-score-val">0</b> &nbsp;|&nbsp; Best: <b id="snake-best-val">0</b></div>
+    <canvas id="snake-canvas" width="320" height="320"></canvas>
+    <div id="snake-msg"></div>
+    <button id="snake-new-btn">New game</button>
+    <div class="dpad">
+      <div></div><button id="snake-up">▲</button><div></div>
+      <button id="snake-left">◀</button><button id="snake-down">▼</button><button id="snake-right">▶</button>
+    </div>
+  </div>
+
+  <!-- 2048 -->
+  <div class="view" id="view-2048">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">2048</h2>
+    <div id="g2048-score">Score: <b id="g2048-score-val">0</b> &nbsp;|&nbsp; Best: <b id="g2048-best-val">0</b></div>
+    <div id="g2048-board"></div>
+    <div id="g2048-msg"></div>
+    <button id="g2048-new-btn">New game</button>
+    <div class="dpad">
+      <div></div><button id="g2048-up">▲</button><div></div>
+      <button id="g2048-left">◀</button><button id="g2048-down">▼</button><button id="g2048-right">▶</button>
+    </div>
+  </div>
+
+  <!-- CONNECT FOUR -->
+  <div class="view" id="view-c4">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Connect Four</h2>
+    <div class="diff-row">
+      <button data-mode="2p" class="c4-mode-btn">2 Players</button>
+      <button data-mode="1p" class="c4-mode-btn">vs Computer</button>
+    </div>
+    <div id="c4-turn"></div>
+    <div class="stats" style="margin-bottom:1rem;"><span>Best win streak: <b id="c4-best-val">0</b></span></div>
+    <div id="c4-board"></div>
+    <button id="c4-new-btn">New game</button>
+  </div>
+
+  <!-- BREAKOUT -->
+  <div class="view" id="view-breakout">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Breakout</h2>
+    <div id="breakout-stats">
+      <span>Score: <b id="breakout-score-val">0</b></span>
+      <span>Level: <b id="breakout-level-val">1</b></span>
+      <span>Lives: <b id="breakout-lives-val">3</b></span>
+      <span>Best: <b id="breakout-best-val">0</b></span>
+    </div>
+    <canvas id="breakout-canvas" width="320" height="380"></canvas>
+    <div id="breakout-msg">Click or tap the board to launch</div>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:0.75rem;">🟦 Wide paddle &nbsp; 🟨 Slow ball &nbsp; 🟩 Multi-ball &nbsp; ❤️ Extra life</div>
+    <button id="breakout-new-btn">New game</button>
+    <div class="dpad" style="grid-template-columns: repeat(2, 60px);">
+      <button id="breakout-left">◀</button><button id="breakout-right">▶</button>
+    </div>
+  </div>
+
+  <!-- SIMON SAYS -->
+  <div class="view" id="view-simon">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Simon Says</h2>
+    <div id="simon-stats">Round: <b id="simon-round-val">0</b> &nbsp;|&nbsp; Best: <b id="simon-best-val">0</b></div>
+    <div id="simon-board">
+      <div class="simon-pad green" data-pad="0"></div>
+      <div class="simon-pad red" data-pad="1"></div>
+      <div class="simon-pad yellow" data-pad="2"></div>
+      <div class="simon-pad blue" data-pad="3"></div>
+    </div>
+    <div id="simon-msg"></div>
+    <button id="simon-new-btn">New game</button>
+  </div>
+
+  <!-- BLOCK BLAST -->
+  <div class="view" id="view-blast">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Block Blast</h2>
+    <div id="blast-score">Score: <b id="blast-score-val">0</b> &nbsp;|&nbsp; Best: <b id="blast-best-val">0</b></div>
+    <div id="blast-board"></div>
+    <div id="blast-slots"></div>
+    <div id="blast-msg"></div>
+    <button id="blast-new-btn">New game</button>
+  </div>
+
+  <!-- WORDLE -->
+  <div class="view" id="view-wordle">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Wordle</h2>
+    <div class="stats"><span>Best: <b id="wordle-best-val">–</b></span></div>
+    <div class="wordle-board" id="wordle-board"></div>
+    <div id="wordle-msg"></div>
+    <div class="wordle-keyboard" id="wordle-keyboard"></div>
+    <button id="wordle-new-btn">New game</button>
+  </div>
+
+  <!-- MINESWEEPER -->
+  <div class="view" id="view-mines">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Minesweeper</h2>
+    <div class="diff-row">
+      <button data-diff="easy" class="mine-diff-btn">Easy</button>
+      <button data-diff="medium" class="mine-diff-btn">Medium</button>
+      <button data-diff="hard" class="mine-diff-btn">Hard</button>
+    </div>
+    <div id="mine-stats">
+      <span>Mines: <b id="mine-count-val">10</b></span>
+      <span>Time: <b id="mine-time-val">0:00</b></span>
+      <span>Best: <b id="mine-best-val">–</b></span>
+    </div>
+    <div class="mine-board" id="mine-board"></div>
+    <div id="mine-msg"></div>
+    <div class="controls">
+      <button id="mine-flag-btn">🚩 Flag mode: Off</button>
+      <button id="mine-new-btn">New game</button>
+    </div>
+  </div>
+
+  <!-- TAG -->
+  <div class="view" id="view-tag">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Tag</h2>
+    <p style="font-size:13px; color:var(--muted); margin:0 0 0.75rem; text-align:center;">2 players, local. P1: WASD + Space &nbsp;|&nbsp; P2: Arrow keys + Shift</p>
+    <div class="tag-opts">
+      <button data-map="0" class="tag-map-btn">Neon Arena</button>
+      <button data-map="1" class="tag-map-btn">Jungle Maze</button>
+      <button data-map="2" class="tag-map-btn">Sky Islands</button>
+      <button data-map="3" class="tag-map-btn">Lava Forge</button>
+    </div>
+    <div class="tag-opts">
+      <button data-time="30" class="tag-time-btn">30s</button>
+      <button data-time="60" class="tag-time-btn">60s</button>
+      <button data-time="90" class="tag-time-btn">90s</button>
+      <button id="tag-powers-btn" class="active">Power-ups: ON</button>
+    </div>
+    <div id="tag-stats">
+      <span>Time: <b id="tag-time-val">60</b>s</span>
+      <span>It: <b id="tag-it-val">P1</b></span>
+      <span>Tags: <b id="tag-score-val">0</b></span>
+      <span>Best: <b id="tag-best-val">0</b></span>
+    </div>
+    <canvas id="tag-canvas" width="960" height="640"></canvas>
+    <div id="tag-msg"></div>
+    <div class="power-legend">🛡️ Shield <span>⚡ Speed</span> <span>⬆️ Jump boost</span> <span>Dashed walls: phase through</span> <span>Glowing pads: side-launch</span></div>
+    <button id="tag-new-btn">New game</button>
+  </div>
+
+  <!-- COOKIE CLICKER -->
+  <div class="view" id="view-cookie">
+    <a class="back" onclick="showView('hub')">&larr; Game hub</a>
+    <h2 class="game-title">Cookie Clicker</h2>
+    <div class="cookie-wrap">
+      <div class="cookie-left">
+        <div id="cookie-count">0 cookies</div>
+        <div id="cookie-cps">per second: 0</div>
+        <div id="big-cookie-wrap">
+          <div id="big-cookie"></div>
+          <div id="golden-cookie"></div>
+        </div>
+        <div id="cookie-buff-msg"></div>
+        <div id="cookie-stats-panel">
+          <div>Baked all-time: <b id="cookie-total">0</b></div>
+          <div>Cookies per click: <b id="cookie-click-power">1</b></div>
+          <div>Best ever: <b id="cookie-best-val">0</b></div>
+        </div>
+        <button id="cookie-reset-btn" style="margin-top:12px;">Reset game</button>
+      </div>
+      <div class="cookie-right">
+        <div class="cookie-section-label">Upgrades</div>
+        <div id="cookie-upgrades"></div>
+        <div class="cookie-section-label">Store</div>
+        <div class="cookie-store" id="cookie-store"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ============ LOCK SCREEN ============ */
   (function(){
-    var countEl, cpsEl, totalEl, clickPowerEl, buffMsgEl, upgradesEl, storeEl, bigCookie, golden, bestEl;
+    var ACCOUNTS = {
+      '021911': 'Force Fortune',
+      '072211': 'kaley',
+      '020911': 'Lukw'
+    };
+    var LOG_CODE = '0613';
+    var LOG_KEY = 'gamehub_access_log';
 
-    var cookies = 0, totalBaked = 0, clickPower = 1;
-    var frenzyMult = 1, frenzyTimeLeft = 0;
-    var clickFrenzyMult = 1;
-    var goldenTimer = null, goldenHideTimer = null;
-    var tickIv = null, running = false;
+    function readLog(){ try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch(e){ return []; } }
+    function writeLog(arr){ try { localStorage.setItem(LOG_KEY, JSON.stringify(arr)); } catch(e){} }
+    function nowStamp(){
+      var d = new Date();
+      function p(n){ return n<10?'0'+n:''+n; }
+      return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+    }
 
-    var BUILDINGS = [
-      { id:'cursor',  name:'Cursor',       icon:'👆', baseCost:15,        baseCps:0.1,   owned:0, mult:1 },
-      { id:'grandma', name:'Grandma',      icon:'👵', baseCost:100,       baseCps:1,     owned:0, mult:1 },
-      { id:'farm',    name:'Farm',         icon:'🌾', baseCost:1100,      baseCps:8,     owned:0, mult:1 },
-      { id:'mine',    name:'Mine',         icon:'⛏️', baseCost:12000,     baseCps:47,    owned:0, mult:1 },
-      { id:'factory', name:'Factory',      icon:'🏭', baseCost:130000,    baseCps:260,   owned:0, mult:1 },
-      { id:'bank',    name:'Bank',         icon:'🏦', baseCost:1400000,   baseCps:1400,  owned:0, mult:1 },
-      { id:'temple',  name:'Temple',       icon:'🛕', baseCost:20000000,  baseCps:7800,  owned:0, mult:1 },
-      { id:'wizard',  name:'Wizard Tower', icon:'🧙', baseCost:330000000, baseCps:44000, owned:0, mult:1 },
-      { id:'ship',    name:'Shipment',     icon:'🚀', baseCost:5100000000, baseCps:260000, owned:0, mult:1 },
-      { id:'alchemy', name:'Alchemy Lab',  icon:'⚗️', baseCost:75000000000, baseCps:1600000, owned:0, mult:1 }
-    ];
-    var COST_SCALE = 1.15;
+    var overlay, input, msgEl, logModal;
 
-    var UPGRADES = [];
-    BUILDINGS.forEach(function(b){
-      UPGRADES.push({ id:b.id+'-u1', target:b.id, needOwned:1,  cost:b.baseCost*10,  bought:false, icon:b.icon, name:b.name+' upgrade I',  desc:'Doubles '+b.name+' production.' });
-      UPGRADES.push({ id:b.id+'-u2', target:b.id, needOwned:10, cost:b.baseCost*100, bought:false, icon:b.icon, name:b.name+' upgrade II', desc:'Doubles '+b.name+' production again.' });
+    function renderLog(){
+      var list = document.getElementById('log-list');
+      var meta = document.getElementById('log-meta');
+      var arr = readLog();
+      list.innerHTML = '';
+      meta.textContent = arr.length + ' entr' + (arr.length===1?'y':'ies') + ' recorded on this device';
+      if(arr.length===0){
+        var li = document.createElement('li');
+        li.className = 'empty';
+        li.textContent = 'No access yet';
+        list.appendChild(li);
+        return;
+      }
+      arr.forEach(function(entry, i){
+        var li = document.createElement('li');
+        var idx = document.createElement('span'); idx.className='li-idx'; idx.textContent = '#'+(i+1);
+        var body = document.createElement('span'); body.textContent = (entry.user||'Unknown') + ' — ' + entry.time;
+        li.appendChild(idx); li.appendChild(body);
+        list.appendChild(li);
+      });
+    }
+
+    function tryUnlock(){
+      var code = (input.value || '').trim();
+      msgEl.textContent = '';
+      var user = ACCOUNTS[code];
+      if(user){
+        var arr = readLog();
+        arr.unshift({ time: nowStamp(), user: user });
+        writeLog(arr);
+        overlay.classList.add('hidden');
+        input.value = '';
+        return;
+      }
+      msgEl.textContent = 'Incorrect code';
+      input.value = '';
+      input.focus();
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      overlay = document.getElementById('lock-overlay');
+      input = document.getElementById('lock-input');
+      msgEl = document.getElementById('lock-msg');
+      logModal = document.getElementById('log-modal');
+      document.getElementById('lock-submit').addEventListener('click', function(e){ e.preventDefault(); tryUnlock(); });
+      input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); tryUnlock(); } });
+      document.getElementById('log-close-btn').addEventListener('click', function(){ logModal.classList.remove('active'); input.focus(); });
+      logModal.addEventListener('click', function(e){ if(e.target===logModal){ logModal.classList.remove('active'); } });
+      document.getElementById('log-clear-btn').addEventListener('click', function(){
+        if(confirm('Clear all access log entries?')){ writeLog([]); renderLog(); }
+      });
+      var logBtn = document.getElementById('settings-log-btn');
+      var logEntry = document.getElementById('settings-log-entry');
+      var logInput = document.getElementById('settings-log-input');
+      var logMsg = document.getElementById('settings-log-msg');
+      logBtn.addEventListener('click', function(){
+        logEntry.style.display = 'flex';
+        logMsg.textContent = '';
+        logInput.value = '';
+        logInput.focus();
+      });
+      function openLogFromSettings(){
+        var code = (logInput.value || '').trim();
+        if(code === LOG_CODE){
+          logInput.value = '';
+          logMsg.textContent = '';
+          logEntry.style.display = 'none';
+          renderLog();
+          logModal.classList.add('active');
+        } else {
+          logMsg.textContent = 'Incorrect code';
+          logInput.value = '';
+          logInput.focus();
+        }
+      }
+      document.getElementById('settings-log-go').addEventListener('click', function(e){ e.preventDefault(); openLogFromSettings(); });
+      logInput.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); openLogFromSettings(); } });
+      input.focus();
+    });
+  })();
+
+  function getHigh(key){
+    try {
+      var v = localStorage.getItem('gamehub_hs_' + key);
+      return v===null ? null : parseFloat(v);
+    } catch(e){ return null; }
+  }
+  function setHigh(key, value){
+    try { localStorage.setItem('gamehub_hs_' + key, value); } catch(e){}
+  }
+  function updateHigh(key, value, higherIsBetter){
+    var cur = getHigh(key);
+    var better = cur===null || (higherIsBetter ? value>cur : value<cur);
+    if(better) setHigh(key, value);
+    return better ? value : cur;
+  }
+
+  var pendingResetFn = null;
+  function confirmReset(fn){
+    pendingResetFn = fn;
+    document.getElementById('modal-overlay').classList.add('active');
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('modal-cancel-btn').addEventListener('click', function(){
+      pendingResetFn = null;
+      document.getElementById('modal-overlay').classList.remove('active');
+    });
+    document.getElementById('modal-confirm-btn').addEventListener('click', function(){
+      document.getElementById('modal-overlay').classList.remove('active');
+      if(pendingResetFn){ pendingResetFn(); pendingResetFn = null; }
+    });
+    document.getElementById('modal-overlay').addEventListener('click', function(e){
+      if(e.target.id === 'modal-overlay'){
+        pendingResetFn = null;
+        document.getElementById('modal-overlay').classList.remove('active');
+      }
+    });
+  });
+
+  /* ============ SETTINGS ============ */
+  document.addEventListener('DOMContentLoaded', function(){
+    var settingsOverlay = document.getElementById('settings-overlay');
+    document.getElementById('settings-btn').addEventListener('click', function(){
+      settingsOverlay.classList.add('active');
+    });
+    document.getElementById('settings-close-btn').addEventListener('click', function(){
+      settingsOverlay.classList.remove('active');
+    });
+    settingsOverlay.addEventListener('click', function(e){
+      if(e.target === settingsOverlay) settingsOverlay.classList.remove('active');
     });
 
-    function fmt(n){
-      if(n < 1000) return (Math.floor(n*10)/10).toString();
-      var suf = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
-      var mag = Math.floor(Math.log10(n) / 3);
-      if(mag >= suf.length) mag = suf.length - 1;
-      var scaled = n / Math.pow(1000, mag);
-      return scaled.toFixed(scaled < 10 ? 2 : scaled < 100 ? 1 : 0) + suf[mag];
-    }
-    function fmtInt(n){
-      if(n < 1000) return Math.ceil(n).toString();
-      return fmt(n);
-    }
-
-    function cost(b){ return b.baseCost * Math.pow(COST_SCALE, b.owned); }
-
-    function totalCps(){
-      var sum = 0;
-      BUILDINGS.forEach(function(b){ sum += b.owned * b.baseCps * b.mult; });
-      return sum * frenzyMult;
-    }
-
-    function buyBuilding(b){
-      var c = cost(b);
-      if(cookies < c) return;
-      cookies -= c;
-      b.owned++;
-      render();
-    }
-
-    function buyUpgrade(u){
-      if(u.bought || cookies < u.cost) return;
-      cookies -= u.cost;
-      u.bought = true;
-      var b = BUILDINGS.filter(function(x){ return x.id === u.target; })[0];
-      if(b) b.mult *= 2;
-      render();
-    }
-
-    function spawnFloat(text, x, y){
-      var el = document.createElement('div');
-      el.className = 'cookie-float';
-      el.textContent = text;
-      el.style.left = x + 'px';
-      el.style.top = y + 'px';
-      document.getElementById('big-cookie-wrap').appendChild(el);
-      setTimeout(function(){ el.remove(); }, 850);
-    }
-
-    function clickCookie(e){
-      var gain = clickPower * clickFrenzyMult;
-      cookies += gain;
-      totalBaked += gain;
-      var wrapRect = document.getElementById('big-cookie-wrap').getBoundingClientRect();
-      var cx, cy;
-      if(e && e.touches && e.touches[0]){
-        cx = e.touches[0].clientX - wrapRect.left;
-        cy = e.touches[0].clientY - wrapRect.top;
-      } else if(e && typeof e.clientX === 'number'){
-        cx = e.clientX - wrapRect.left;
-        cy = e.clientY - wrapRect.top;
-      } else {
-        cx = wrapRect.width/2; cy = wrapRect.height/2;
-      }
-      spawnFloat('+' + fmtInt(gain), cx + (Math.random()*20-10), cy);
-      renderTopStats();
-    }
-
-    function maybeSpawnGolden(){
-      if(!running) return;
-      var el = golden;
-      var wrap = document.getElementById('big-cookie-wrap');
-      var w = wrap.clientWidth, h = wrap.clientHeight;
-      el.style.left = (20 + Math.random() * Math.max(1, w - 72)) + 'px';
-      el.style.top = (20 + Math.random() * Math.max(1, h - 72)) + 'px';
-      el.style.display = 'block';
-      clearTimeout(goldenHideTimer);
-      goldenHideTimer = setTimeout(function(){ el.style.display = 'none'; scheduleGolden(); }, 12000);
-    }
-    function scheduleGolden(){
-      clearTimeout(goldenTimer);
-      var delay = 15000 + Math.random() * 25000;
-      goldenTimer = setTimeout(maybeSpawnGolden, delay);
-    }
-    function clickGolden(){
-      golden.style.display = 'none';
-      clearTimeout(goldenHideTimer);
-      var roll = Math.random();
-      if(roll < 0.5){
-        frenzyMult = 7;
-        frenzyTimeLeft = 13;
-        buffMsgEl.textContent = 'Frenzy! Production x7 for 13s';
-      } else {
-        var bonus = Math.max(50, Math.round(cookies * 0.15), Math.round(totalCps() * 60 * 0.15));
-        cookies += bonus;
-        totalBaked += bonus;
-        buffMsgEl.textContent = 'Lucky! +' + fmtInt(bonus) + ' cookies';
-        setTimeout(function(){ if(buffMsgEl.textContent.indexOf('Lucky') === 0) buffMsgEl.textContent = ''; }, 3000);
-      }
-      scheduleGolden();
-      render();
-    }
-
-    function renderTopStats(){
-      countEl.textContent = fmtInt(cookies) + ' cookie' + (Math.floor(cookies) === 1 ? '' : 's');
-      var cps = totalCps();
-      cpsEl.textContent = 'per second: ' + fmt(cps);
-      totalEl.textContent = fmtInt(totalBaked);
-      clickPowerEl.textContent = fmtInt(clickPower * clickFrenzyMult);
-      var best = updateHigh('cookie', totalBaked, true);
-      if(bestEl) bestEl.textContent = fmtInt(best);
-      if(frenzyTimeLeft > 0){
-        buffMsgEl.textContent = 'Frenzy! Production x7 (' + Math.ceil(frenzyTimeLeft) + 's)';
-      } else if(buffMsgEl.textContent.indexOf('Frenzy') === 0){
-        buffMsgEl.textContent = '';
-      }
-    }
-
-    function render(){
-      renderTopStats();
-      storeEl.innerHTML = '';
-      BUILDINGS.forEach(function(b){
-        var c = cost(b);
-        var row = document.createElement('div');
-        row.className = 'cookie-item' + (cookies < c ? ' disabled' : '');
-        row.innerHTML =
-          '<div><div class="ci-name">' + b.icon + ' ' + b.name + '</div>' +
-          '<div class="ci-sub">' + fmt(b.baseCps * b.mult) + ' cps each</div></div>' +
-          '<div class="ci-right"><div class="ci-cost">' + fmtInt(c) + '</div>' +
-          '<div class="ci-owned">owned ' + b.owned + '</div></div>';
-        row.addEventListener('click', function(){ buyBuilding(b); });
-        storeEl.appendChild(row);
+    document.querySelectorAll('.theme-btn').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.body.classList.toggle('dark', b.dataset.theme === 'dark');
+        document.querySelectorAll('.theme-btn').forEach(function(x){ x.classList.toggle('active', x===b); });
+        document.documentElement.style.removeProperty('--app-text');
+        document.getElementById('setting-text-color').value = b.dataset.theme==='dark' ? '#ece9e2' : '#2c2c2a';
       });
-      upgradesEl.innerHTML = '';
-      var anyAvailable = false;
-      UPGRADES.forEach(function(u){
-        if(u.bought) return;
-        var b = BUILDINGS.filter(function(x){ return x.id === u.target; })[0];
-        if(!b || b.owned < u.needOwned) return;
-        anyAvailable = true;
-        var btn = document.createElement('div');
-        btn.className = 'cookie-upg' + (cookies < u.cost ? ' disabled' : '');
-        btn.textContent = u.icon;
-        btn.title = u.name + ' — ' + u.desc + ' (' + fmtInt(u.cost) + ' cookies)';
-        btn.addEventListener('click', function(){ buyUpgrade(u); });
-        upgradesEl.appendChild(btn);
-      });
-      if(!anyAvailable){
-        upgradesEl.innerHTML = '<div style="font-size:12px;color:var(--muted);">Buy buildings to unlock upgrades.</div>';
-      }
-    }
+    });
+    document.querySelector('.theme-btn[data-theme="light"]').classList.add('active');
 
-    function tick(){
-      var cps = totalCps();
-      cookies += cps / 10;
-      totalBaked += cps / 10;
-      if(frenzyTimeLeft > 0){
-        frenzyTimeLeft -= 0.1;
-        if(frenzyTimeLeft <= 0){ frenzyTimeLeft = 0; frenzyMult = 1; }
-      }
-      renderTopStats();
-      var rows = storeEl.children;
-      for(var i=0;i<rows.length;i++){
-        var b = BUILDINGS[i];
-        if(!b) continue;
-        rows[i].classList.toggle('disabled', cookies < cost(b));
-      }
-    }
+    document.getElementById('setting-text-color').addEventListener('input', function(e){
+      document.documentElement.style.setProperty('--app-text', e.target.value);
+    });
 
-    function resetCookie(){
-      cookies = 0; totalBaked = 0; clickPower = 1; frenzyMult = 1; frenzyTimeLeft = 0;
-      BUILDINGS.forEach(function(b){ b.owned = 0; b.mult = 1; });
-      UPGRADES.forEach(function(u){ u.bought = false; });
-      buffMsgEl.textContent = '';
-      render();
-    }
+    document.getElementById('setting-font').addEventListener('change', function(e){
+      document.documentElement.style.setProperty('--app-font', e.target.value);
+    });
+  });
 
-    function initCookie(){
-      countEl = document.getElementById('cookie-count');
-      cpsEl = document.getElementById('cookie-cps');
-      totalEl = document.getElementById('cookie-total');
-      bestEl = document.getElementById('cookie-best-val');
-      bestEl.textContent = fmtInt(getHigh('cookie') || 0);
-      clickPowerEl = document.getElementById('cookie-click-power');
-      buffMsgEl = document.getElementById('cookie-buff-msg');
-      upgradesEl = document.getElementById('cookie-upgrades');
-      storeEl = document.getElementById('cookie-store');
-      bigCookie = document.getElementById('big-cookie');
-      golden = document.getElementById('golden-cookie');
+  function showView(name){
+    var prev = document.querySelector('.view.active');
+    var prevName = prev ? prev.id.replace('view-', '') : null;
+    document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+    document.getElementById('view-' + name).classList.add('active');
+    if(prevName === 'cookie' && name !== 'cookie' && typeof cookieLeave === 'function') cookieLeave();
+    if(name === 'sudoku' && !sudokuStarted){ sudokuStarted = true; newPuzzle('easy'); }
+    if(name === 'memory' && !memoryStarted){ memoryStarted = true; newMemoryGame(); }
+    if(name === 'ttt' && !tttStarted){ tttStarted = true; newTttGame(); }
+    if(name === 'snake' && !snakeStarted){ snakeStarted = true; newSnakeGame(); }
+    if(name === '2048' && !g2048Started){ g2048Started = true; new2048Game(); }
+    if(name === 'c4' && !c4Started){ c4Started = true; newC4Game(); }
+    if(name === 'breakout' && !breakoutStarted){ breakoutStarted = true; initBreakout(); }
+    if(name === 'simon' && !simonStarted){ simonStarted = true; newSimonGame(); }
+    if(name === 'blast' && !blastStarted){ blastStarted = true; newBlastGame(); }
+    if(name === 'wordle' && !wordleStarted){ wordleStarted = true; newWordleGame(); }
+    if(name === 'mines' && !minesStarted){ minesStarted = true; initMines(); }
+    if(name === 'tag' && !tagStarted){ tagStarted = true; initTag(); }
+    if(name === 'cookie' && !cookieStarted){ cookieStarted = true; initCookie(); }
+    if(name === 'cookie' && typeof cookieEnter === 'function'){ cookieEnter(); }
+    if(name === 'snake'){ snakeFocus(); }
+  }
+  var sudokuStarted = false, memoryStarted = false, tttStarted = false;
+  var snakeStarted = false, g2048Started = false, c4Started = false;
+  var breakoutStarted = false, simonStarted = false, blastStarted = false;
+  var wordleStarted = false, minesStarted = false, tagStarted = false;
+  var cookieStarted = false;
 
-      bigCookie.addEventListener('click', clickCookie);
-      bigCookie.addEventListener('touchstart', function(e){ e.preventDefault(); clickCookie(e); }, { passive:false });
-      golden.addEventListener('click', clickGolden);
-      document.getElementById('cookie-reset-btn').addEventListener('click', function(){ confirmReset(resetCookie); });
-
-      render();
-      running = true;
-      tickIv = setInterval(tick, 100);
-      scheduleGolden();
-    }
-
-    window.cookieLeave = function(){
-      running = false;
-    };
-    window.cookieEnter = function(){
-      running = true;
-    };
-
-    window.initCookie = initCookie;
-  })();
+  </script>
+<script src="games/sudoku.js"></script>
+<script src="games/memory-match.js"></script>
+<script src="games/tic-tac-toe.js"></script>
+<script src="games/snake.js"></script>
+<script src="games/2048.js"></script>
+<script src="games/connect-four.js"></script>
+<script src="games/breakout.js"></script>
+<script src="games/simon-says.js"></script>
+<script src="games/block-blast.js"></script>
+<script src="games/wordle.js"></script>
+<script src="games/minesweeper.js"></script>
+<script src="games/tag.js"></script>
+<script src="games/cookie-clicker.js"></script>
+<script src="leaderboard.js"></script>
+</body>
+</html>

@@ -1,74 +1,22 @@
-/* ============ SIMON SAYS ============ */
-  (function(){
-    var boardEl, roundEl, msgEl, bestEl;
-    var sequence = [], userStep = 0, round = 0, busy = false, over = true;
-    var colors = ['green','red','yellow','blue'];
-
-    window.newSimonGame = function(){
-      boardEl = document.getElementById('simon-board');
-
-      roundEl = document.getElementById('simon-round-val');
-      msgEl = document.getElementById('simon-msg');
-      bestEl = document.getElementById('simon-best-val');
-      bestEl.textContent = getHigh('simon') || 0;
-      sequence = []; userStep = 0; round = 0; over = false;
-      roundEl.textContent = 0;
-      msgEl.textContent = 'Watch the pattern...';
-      nextRound();
-    };
-
-    function nextRound(){
-      round++;
-      roundEl.textContent = round;
-      sequence.push(Math.floor(Math.random()*4));
-      userStep = 0;
-      playSequence();
-    }
-
-    function playSequence(){
-      busy = true;
-      msgEl.textContent = 'Watch the pattern...';
-      var i = 0;
-      var iv = setInterval(function(){
-        if(i>0) unlight(sequence[i-1]);
-        if(i>=sequence.length){
-          clearInterval(iv);
-          busy = false;
-          msgEl.textContent = 'Your turn';
-          return;
-        }
-        light(sequence[i]);
-        i++;
-      }, 500);
-    }
-
-    function light(idx){
-      boardEl.querySelector('[data-pad="'+idx+'"]').classList.add('lit');
-    }
-    function unlight(idx){
-      boardEl.querySelector('[data-pad="'+idx+'"]').classList.remove('lit');
-    }
-
-    function onPad(idx){
-      if(busy || over) return;
-      light(idx);
-      setTimeout(function(){ unlight(idx); }, 200);
-      if(idx===sequence[userStep]){
-        userStep++;
-        if(userStep===sequence.length){
-          setTimeout(nextRound, 700);
-        }
-      } else {
-        over = true;
-        bestEl.textContent = updateHigh('simon', round - 1, true);
-        msgEl.textContent = 'Game over — reached round ' + round;
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', function(){
-      document.querySelectorAll('.simon-pad').forEach(function(p){
-        p.addEventListener('click', function(){ onPad(+p.dataset.pad); });
-      });
-      document.getElementById('simon-new-btn').addEventListener('click', function(){ confirmReset(newSimonGame); });
-    });
-  })();
+/* simon says */
+  #simon-stats { font-size: 14px; color: var(--muted); margin-bottom: 1.25rem; }
+  #simon-board {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: min(85vw, 260px);
+    aspect-ratio: 1;
+    margin-bottom: 1.25rem;
+  }
+  .simon-pad {
+    border-radius: 12px;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 0.1s;
+  }
+  .simon-pad.lit { opacity: 1; }
+  .simon-pad.green { background: #6fae4a; }
+  .simon-pad.red { background: #db5a3c; }
+  .simon-pad.yellow { background: #e8c86e; }
+  .simon-pad.blue { background: #4a6fa5; }
+  #simon-msg { font-size: 14px; color: var(--muted); margin-bottom: 0.5rem; min-height: 20px; }
