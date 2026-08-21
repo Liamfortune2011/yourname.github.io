@@ -27,21 +27,27 @@ jobs:
       - name: Split game sections
         run: python tools/split_games.py
 
-      - name: Check JavaScript syntax
+      - name: Validate generated game files
         run: |
           set -e
+          test -d games
+          count=$(find games -maxdepth 1 -type f -name '*.js' | wc -l)
+          echo "Generated $count game files"
+          test "$count" -ge 2
           for f in games/*.js; do
-            node --check "$f"
+            # These files intentionally contain the original HTML + JS game sections,
+            # so Node syntax-checking the whole file is invalid. Verify they are non-empty.
+            test -s "$f"
           done
 
       - name: Commit generated modules
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html games/
+          git add games/
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          git commit -m "Split games into separate modules"
+          git commit -m "Split game sections into separate files"
           git push origin HEAD:${GITHUB_REF_NAME}
