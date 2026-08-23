@@ -1,0 +1,48 @@
+name: Use external leaderboard script
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[leaderboard-external]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace embedded leaderboard with external script
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '<!-- Shared online leaderboard -->'
+          if marker not in s:
+              if '<script src="leaderboard.js"></script>' in s:
+                  print('External leaderboard already installed')
+                  raise SystemExit(0)
+              print('No embedded leaderboard found; nothing to replace')
+              raise SystemExit(0)
+
+          # The old leaderboard workflow appends its complete block immediately
+          # before </body>. Replace only that block with the maintained JS file.
+          start = s.index(marker)
+          end = s.index('</body>', start)
+          replacement = '<script src="leaderboard.js"></script>\n'
+          s = s[:start] + replacement + s[end:]
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit external leaderboard switch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Use external per-game leaderboard script [leaderboard-external]"
+          git push
