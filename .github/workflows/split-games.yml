@@ -1,0 +1,54 @@
+name: Split games into modules
+
+on:
+  push:
+    branches:
+      - refactor/games-into-files
+  pull_request:
+    types: [synchronize]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.ref == 'refactor/games-into-files'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refactor/games-into-files
+          fetch-depth: 0
+
+      - name: Split game sections
+        run: python tools/split_games.py
+
+      - name: Validate generated game files
+        run: |
+          set -e
+          test -d games
+          count=$(find games -maxdepth 1 -type f -name '*.js' | wc -l)
+          echo "Generated $count game files"
+          test "$count" -eq 13
+          for f in games/*.js; do
+            test -s "$f"
+            node --check "$f"
+          done
+          grep -q 'games/sudoku.js' index.html
+          grep -q 'games/cookie-clicker.js' index.html
+
+      - name: Commit generated modules
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html games/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Split games into separate JavaScript modules"
+          git push origin HEAD:${GITHUB_REF_NAME}
