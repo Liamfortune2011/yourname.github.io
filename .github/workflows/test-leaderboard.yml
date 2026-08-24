@@ -27,6 +27,13 @@ jobs:
           grep -q "mines_easy" leaderboard.js
           grep -q "mines_medium" leaderboard.js
           grep -q "mines_hard" leaderboard.js
-          grep -q "g2048" leaderboard.js
+          grep -q "2048" leaderboard.js
           grep -q "snake" leaderboard.js
-          grep -q "ttt" leaderboard.js
+          grep -q "tic_tac_toe" leaderboard.js
+          grep -q "connect_four" leaderboard.js
+          grep -q "breakout" leaderboard.js
+          grep -q "simon_says" leaderboard.js
+          grep -q "block_blast" leaderboard.js
+          grep -q "wordle" leaderboard.js
+          grep -q "tag" leaderboard.js
+          grep -q "cookie_clicker" leaderboard.js
