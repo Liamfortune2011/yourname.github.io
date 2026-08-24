@@ -1,0 +1,32 @@
+name: Test leaderboard changes
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate HTML and leaderboard JavaScript
+        run: |
+          test -f index.html
+          test -f leaderboard.js
+          grep -q "leaderboard" index.html
+          node --check leaderboard.js
+      - name: Verify per-game leaderboard definitions
+        run: |
+          grep -q "sudoku_easy" leaderboard.js
+          grep -q "sudoku_medium" leaderboard.js
+          grep -q "sudoku_hard" leaderboard.js
+          grep -q "mines_easy" leaderboard.js
+          grep -q "mines_medium" leaderboard.js
+          grep -q "mines_hard" leaderboard.js
+          grep -q "g2048" leaderboard.js
+          grep -q "snake" leaderboard.js
+          grep -q "ttt" leaderboard.js
