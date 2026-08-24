@@ -2,6 +2,48 @@
   const SUPABASE_URL='https://gywrmkluncycfxeffypc.supabase.co';
   const SUPABASE_KEY='sb_publishable_LI8-YNwApCJSVL2EkB7dzA_ZIBLxe3s';
 
+  // Capture the login before the lock-screen handler clears the input.
+  const ACCOUNT_NAMES={'021911':'Force Fortune','072211':'kaley','020911':'Lukw'};
+  function captureAccount(){
+    const input=document.getElementById('lock-input');
+    if(!input) return;
+    const code=(input.value||'').trim();
+    if(ACCOUNT_NAMES[code]){
+      window.gameHubAccountCode=code;
+      window.gameHubAccountUsername=ACCOUNT_NAMES[code];
+    }
+  }
+  document.addEventListener('click',function(e){
+    if(e.target && e.target.id==='lock-submit') captureAccount();
+  },true);
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Enter' && e.target && e.target.id==='lock-input') captureAccount();
+  },true);
+
+  // Sync a newly-achieved high score without ever blocking the game.
+  const scoreIds={
+    sudoku_easy:'sudoku_easy',sudoku_medium:'sudoku_medium',sudoku_hard:'sudoku_hard',sudoku_xtra:'sudoku_extra',
+    mines_easy:'mines_easy',mines_medium:'mines_medium',mines_hard:'mines_hard',
+    ttt:'tic_tac_toe',c4:'connect_four',simon:'simon_says',blast:'block_blast',cookie:'cookie_clicker'
+  };
+  const originalUpdateHigh=window.updateHigh;
+  if(typeof originalUpdateHigh==='function'){
+    window.updateHigh=function(key,value,higherIsBetter){
+      const before=window.getHigh ? window.getHigh(key) : null;
+      const result=originalUpdateHigh(key,value,higherIsBetter);
+      const improved=before===null || before===undefined || (higherIsBetter ? value>before : value<before);
+      if(improved && window.gameHubAccountUsername && window.gameHubAccountCode){
+        const gameId=scoreIds[key]||key;
+        fetch(SUPABASE_URL+'/rest/v1/game_scores',{
+          method:'POST',
+          headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},
+          body:JSON.stringify({account_code:window.gameHubAccountUsername,game_id:gameId,score:Number(value)})
+        }).catch(function(){});
+      }
+      return result;
+    };
+  }
+
   const css=`
     #lb-btn{position:fixed;top:14px;left:14px;z-index:9999;padding:9px 11px;border-radius:999px;font-size:18px}
     #lb-modal{display:none;position:fixed;inset:0;z-index:9998;background:#0007;align-items:center;justify-content:center;padding:16px}
@@ -39,8 +81,6 @@
   </div>`;
   document.body.appendChild(modal);
 
-  // One leaderboard button per actual game. Modes/difficulties stay separate
-  // so scores such as Sudoku Easy/Medium/Hard are never mixed together.
   const games=[
     {name:'Sudoku', types:['Easy','Medium','Hard'], ids:['sudoku_easy','sudoku_medium','sudoku_hard']},
     {name:'Memory', types:['Standard'], ids:['memory']},
@@ -60,83 +100,45 @@
   let rows=[];
   let selectedGame=0;
   let selectedType=0;
-
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const gamesEl=()=>document.getElementById('lb-games');
   const typesEl=()=>document.getElementById('lb-types');
   const resultsEl=()=>document.getElementById('lb-results');
-
-  function homeView(){
-    return Array.from(document.querySelectorAll('.view')).find(v=>v.querySelector('.grid')) || null;
-  }
-
+  function homeView(){return Array.from(document.querySelectorAll('.view')).find(v=>v.querySelector('.grid'))||null;}
   function isHomeVisible(){
     const lock=document.getElementById('lock-overlay');
-    if(lock && getComputedStyle(lock).display!=='none') return false;
+    if(lock&&getComputedStyle(lock).display!=='none') return false;
     const home=homeView();
-    return !!home && home.classList.contains('active');
+    return !!home&&home.classList.contains('active');
   }
-
-  function visible(){
-    btn.style.display=isHomeVisible()?'block':'none';
-    if(!isHomeVisible()) modal.classList.remove('open');
-  }
-
+  function visible(){btn.style.display=isHomeVisible()?'block':'none';if(!isHomeVisible()) modal.classList.remove('open');}
   function renderGames(){
-    gamesEl().innerHTML=games.map((g,i)=>
-      `<button class="lb-game-btn${i===selectedGame?' selected':''}" data-game="${i}">${esc(g.name)}</button>`
-    ).join('');
-    gamesEl().querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>{
-      selectedGame=Number(b.dataset.game);
-      selectedType=0;
-      renderGames();
-      renderTypes();
-      renderResults();
-    });
+    gamesEl().innerHTML=games.map((g,i)=>`<button class="lb-game-btn${i===selectedGame?' selected':''}" data-game="${i}">${esc(g.name)}</button>`).join('');
+    gamesEl().querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>{selectedGame=Number(b.dataset.game);selectedType=0;renderGames();renderTypes();renderResults();});
   }
-
   function renderTypes(){
     const g=games[selectedGame];
-    typesEl().innerHTML=g.types.length>1
-      ? g.types.map((type,i)=>`<button class="lb-type-btn${i===selectedType?' selected':''}" data-type="${i}">${esc(type)}</button>`).join('')
-      : '';
-    typesEl().querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{
-      selectedType=Number(b.dataset.type);
-      renderTypes();
-      renderResults();
-    });
+    typesEl().innerHTML=g.types.length>1?g.types.map((type,i)=>`<button class="lb-type-btn${i===selectedType?' selected':''}" data-type="${i}">${esc(type)}</button>`).join(''):'';
+    typesEl().querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{selectedType=Number(b.dataset.type);renderTypes();renderResults();});
   }
-
   function renderResults(){
-    const g=games[selectedGame];
-    const gameId=g.ids[selectedType];
-    const a=rows.filter(x=>x.game_id===gameId).slice(0,10);
-    resultsEl().innerHTML=`<strong>${esc(g.name)}${g.types.length>1?' — '+esc(g.types[selectedType]):''}</strong>`+
-      (a.length
-        ? a.map((x,i)=>`<div class="lb-row"><span>#${i+1}</span><span>${esc(x.account_code)}</span><span class="lb-score">${esc(x.score)}</span></div>`).join('')
-        : '<p class="lb-empty">No scores yet.</p>');
+    const g=games[selectedGame],gameId=g.ids[selectedType],a=rows.filter(x=>x.game_id===gameId).slice(0,10);
+    resultsEl().innerHTML=`<strong>${esc(g.name)}${g.types.length>1?' — '+esc(g.types[selectedType]):''}</strong>`+(a.length?a.map((x,i)=>`<div class="lb-row"><span>#${i+1}</span><span>${esc(x.account_code)}</span><span class="lb-score">${esc(x.score)}</span></div>`).join(''):'<p class="lb-empty">No scores yet.</p>');
   }
-
   async function load(){
     resultsEl().textContent='Loading…';
-    const r=await fetch(SUPABASE_URL+'/rest/v1/game_scores?select=account_code,game_id,score&order=score.desc',{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY}});
-    if(!r.ok) throw Error(r.status);
-    rows=await r.json();
-    renderGames();
-    renderTypes();
-    renderResults();
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),5000);
+    try{
+      const r=await fetch(SUPABASE_URL+'/rest/v1/game_scores?select=account_code,game_id,score&order=score.desc',{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY},signal:controller.signal});
+      if(!r.ok) throw Error(r.status);
+      rows=await r.json();renderGames();renderTypes();renderResults();
+    }finally{clearTimeout(timer);}
   }
-
-  btn.onclick=()=>{
-    if(!isHomeVisible()) return;
-    modal.classList.add('open');
-    load().catch(()=>resultsEl().textContent='Could not load leaderboard.');
-  };
+  btn.onclick=()=>{if(!isHomeVisible()) return;modal.classList.add('open');load().catch(()=>resultsEl().textContent='Could not load leaderboard.');};
   document.getElementById('lb-close').onclick=()=>modal.classList.remove('open');
   modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open');});
-
   document.addEventListener('DOMContentLoaded',visible);
-  const observer=new MutationObserver(visible);
-  observer.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['style','class']});
+  const observer=new MutationObserver(visible);observer.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['style','class']});
   visible();
 })();
