@@ -16,5 +16,6 @@ jobs:
         run: |
           grep -q "gamehub_pending_scores" leaderboard.js
           grep -q "game_scores" leaderboard.js
-          grep -q "Save EVERY completed score" leaderboard.js
-          grep -q "window.updateHigh=function" leaderboard.js
+          grep -q "window.saveGameHubScore=queueScore" leaderboard.js
+          grep -q "function installScoreHook" leaderboard.js
+          grep -q "setInterval(flushScores,5000)" leaderboard.js

@@ -2,72 +2,65 @@
   const SUPABASE_URL='https://gywrmkluncycfxeffypc.supabase.co';
   const SUPABASE_KEY='sb_publishable_LI8-YNwApCJSVL2EkB7dzA_ZIBLxe3s';
   const ACCOUNT_NAMES={'021911':'Force Fortune','072211':'kaley','020911':'Lukw'};
-  function captureAccount(){
-    const input=document.getElementById('lock-input'); if(!input) return;
-    const code=(input.value||'').trim();
-    if(ACCOUNT_NAMES[code]){ window.gameHubAccountCode=code; window.gameHubAccountUsername=ACCOUNT_NAMES[code]; }
+  const scoreIds={sudoku_easy:'sudoku_easy',sudoku_medium:'sudoku_medium',sudoku_hard:'sudoku_hard',sudoku_xtra:'sudoku_extra',mines_easy:'mines_easy',mines_medium:'mines_medium',mines_hard:'mines_hard',ttt:'tic_tac_toe',c4:'connect_four',simon:'simon_says',blast:'block_blast',cookie:'cookie_clicker',memory:'memory',mem:'memory',snake:'snake',g2048:'2048','2048':'2048',breakout:'breakout',wordle:'wordle',tag:'tag',whack:'whack_a_mole',pong:'pong',reaction:'reaction_test',racing:'top_down_racing',archer:'archer_duel',zombie:'zombie_survival',arena:'arena_battle',tetris:'tetris',asteroids:'asteroids',airhockey:'air_hockey',coinrush:'coin_rush',detective:'detective',target:'target_practice',climb:'climb',dodge:'dodge',gravity:'gravity_switch',puzzle15:'15_puzzle',bomb:'bomb_defusal',ninja:'ninja_run',basket:'basket_random',crossy:'crossy_road',bitlife:'bitlife',bowmasters:'bowmasters',paperio:'paper_io',snakeio:'snake_io',skyline:'subaway_runners',mario:'super_mario',fps:'fps_arena'};
+  const games=[
+    ['Sudoku',['Easy','Medium','Hard','Xtra hard'],['sudoku_easy','sudoku_medium','sudoku_hard','sudoku_extra']],['Memory Match',['Standard'],['memory']],['Tic Tac Toe',['Standard'],['tic_tac_toe']],['Snake',['Standard'],['snake']],['2048',['Standard'],['2048']],['Connect Four',['Standard'],['connect_four']],['Whack-a-Mole',['Standard'],['whack_a_mole']],['Simon Says',['Standard'],['simon_says']],['Tag',['Standard'],['tag']],['Cookie Clicker',['Standard'],['cookie_clicker']],['FPS Arena',['Standard'],['fps_arena']],['Minesweeper',['Easy','Medium','Hard'],['mines_easy','mines_medium','mines_hard']],['Pong',['Standard'],['pong']],['Breakout',['Standard'],['breakout']],['Reaction Test',['Standard'],['reaction_test']],['Top-Down Racing',['Standard'],['top_down_racing']],['Archer Duel',['Standard'],['archer_duel']],['Zombie Survival',['Standard'],['zombie_survival']],['Arena Battle',['Standard'],['arena_battle']],['Tetris',['Standard'],['tetris']],['Asteroids',['Standard'],['asteroids']],['Air Hockey',['Standard'],['air_hockey']],['Coin Rush',['Standard'],['coin_rush']],['Detective',['Standard'],['detective']],['Target Practice',['Standard'],['target_practice']],['Climb',['Standard'],['climb']],['Dodge',['Standard'],['dodge']],['Gravity Switch',['Standard'],['gravity_switch']],['15 Puzzle',['Standard'],['15_puzzle']],['Bomb Defusal',['Standard'],['bomb_defusal']],['Ninja Run',['Standard'],['ninja_run']],['Basket Random',['Standard'],['basket_random']],['Crossy Road',['Standard'],['crossy_road']],['BitLife',['Standard'],['bitlife']],['Bowmasters',['Standard'],['bowmasters']],['Paper.io',['Standard'],['paper_io']],['Snake.io',['Standard'],['snake_io']],['Subaway Runners',['Standard'],['subaway_runners']],['Super Mario',['Standard'],['super_mario']],['Block Blast',['Standard'],['block_blast']],['Wordle',['Standard'],['wordle']]
+  ];
+  function account(){
+    const code=localStorage.getItem('gamehub_account_code');
+    const name=localStorage.getItem('gamehub_account_username');
+    if(code&&name){window.gameHubAccountCode=code;window.gameHubAccountUsername=name;return true;}
+    const input=document.getElementById('lock-input');
+    const entered=(input&&input.value||'').trim();
+    if(ACCOUNT_NAMES[entered]){window.gameHubAccountCode=entered;window.gameHubAccountUsername=ACCOUNT_NAMES[entered];localStorage.setItem('gamehub_account_code',entered);localStorage.setItem('gamehub_account_username',ACCOUNT_NAMES[entered]);return true;}
+    return !!(window.gameHubAccountCode&&window.gameHubAccountUsername);
   }
-  document.addEventListener('click',e=>{if(e.target&&e.target.id==='lock-submit')captureAccount();},true);
-  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='lock-input')captureAccount();},true);
-
-  const scoreIds={
-    sudoku_easy:'sudoku_easy',sudoku_medium:'sudoku_medium',sudoku_hard:'sudoku_hard',sudoku_xtra:'sudoku_extra',
-    mines_easy:'mines_easy',mines_medium:'mines_medium',mines_hard:'mines_hard',
-    ttt:'tic_tac_toe',c4:'connect_four',simon:'simon_says',blast:'block_blast',cookie:'cookie_clicker',
-    memory:'memory',snake:'snake','2048':'2048',breakout:'breakout',wordle:'wordle',tag:'tag'
-  };
-
-  // Save EVERY completed score, not only a new local high score. This makes
-  // the server leaderboard independent from this browser's localStorage high score.
+  document.addEventListener('click',e=>{if(e.target&&e.target.id==='lock-submit')account();},true);
+  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='lock-input')account();},true);
+  let flushing=false;
+  function pending(){try{return JSON.parse(localStorage.getItem('gamehub_pending_scores')||'[]')}catch(e){return[]}}
+  function putPending(a){localStorage.setItem('gamehub_pending_scores',JSON.stringify(a.slice(-100)))}
   function queueScore(key,value){
-    if(!window.gameHubAccountUsername || !window.gameHubAccountCode) return;
-    const payload={account_code:window.gameHubAccountUsername,game_id:scoreIds[key]||key,score:Number(value)};
-    const pending=JSON.parse(localStorage.getItem('gamehub_pending_scores')||'[]');
-    pending.push(payload);
-    localStorage.setItem('gamehub_pending_scores',JSON.stringify(pending.slice(-50)));
-    flushScores();
+    if(!account())return;
+    const score=Number(value);if(!Number.isFinite(score))return;
+    const list=pending();list.push({account_code:window.gameHubAccountUsername,game_id:scoreIds[key]||key,score});putPending(list);flushScores();
   }
   async function flushScores(){
-    if(window.gameHubScoreSyncing) return;
-    window.gameHubScoreSyncing=true;
+    if(flushing)return;if(!account())return;flushing=true;
     try{
-      let pending=JSON.parse(localStorage.getItem('gamehub_pending_scores')||'[]');
-      while(pending.length){
-        const r=await fetch(SUPABASE_URL+'/rest/v1/game_scores',{
-          method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},
-          body:JSON.stringify(pending[0])
-        });
-        if(!r.ok) throw Error('score save '+r.status);
-        pending.shift();
-        localStorage.setItem('gamehub_pending_scores',JSON.stringify(pending));
+      while(true){
+        const list=pending();if(!list.length)break;
+        const r=await fetch(SUPABASE_URL+'/rest/v1/game_scores',{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(list[0])});
+        if(!r.ok){localStorage.setItem('gamehub_score_sync_error',String(r.status));break;}
+        list.shift();putPending(list);
       }
-    }catch(e){
-      // Keep failed scores locally and retry on the next login/page load/score.
-    }finally{window.gameHubScoreSyncing=false;}
+    }catch(e){localStorage.setItem('gamehub_score_sync_error',String(e&&e.message||e))}finally{flushing=false}
   }
+  window.saveGameHubScore=queueScore;
   window.addEventListener('online',flushScores);
-  document.addEventListener('DOMContentLoaded',flushScores);
-
-  const originalUpdateHigh=window.updateHigh;
-  if(typeof originalUpdateHigh==='function'){
-    window.updateHigh=function(key,value,higherIsBetter){
-      const result=originalUpdateHigh(key,value,higherIsBetter);
-      queueScore(key,value);
-      return result;
-    };
+  setInterval(flushScores,5000);
+  function installScoreHook(){
+    if(typeof window.updateHigh!=='function')return false;
+    if(window.updateHigh.__gameHubScoreHook)return true;
+    const original=window.updateHigh;
+    function hooked(key,value,higherIsBetter){const result=original.apply(this,arguments);queueScore(key,value);return result}
+    hooked.__gameHubScoreHook=true;hooked.__gameHubOriginal=original;window.updateHigh=hooked;return true;
   }
-
-  const css=`#lb-btn{position:fixed;top:14px;left:14px;z-index:9999;padding:9px 11px;border-radius:999px;font-size:18px}#lb-modal{display:none;position:fixed;inset:0;z-index:9998;background:#0007;align-items:center;justify-content:center;padding:16px}#lb-modal.open{display:flex}.lb-box{background:var(--card-bg,#fff);color:var(--app-text,#222);border-radius:14px;padding:20px;width:min(94vw,760px);max-height:88vh;overflow:auto}.lb-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.lb-games{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:14px}.lb-game-btn{width:100%;text-align:left}.lb-game-btn.selected{background:var(--app-text);color:var(--app-bg);border-color:var(--app-text)}.lb-types{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.lb-type-btn.selected{background:var(--app-text);color:var(--app-bg);border-color:var(--app-text)}.lb-results{border:1px solid var(--card-border,#ccc);border-radius:10px;padding:12px}.lb-row{display:grid;grid-template-columns:36px 1fr auto;gap:8px;padding:8px 0;border-top:1px solid var(--card-border,#ddd);font-size:13px}.lb-row:first-child{border-top:0}.lb-score{font-weight:700}.lb-empty{color:var(--muted);font-size:13px}`;
+  const hookTimer=setInterval(()=>{if(installScoreHook())clearInterval(hookTimer)},50);
+  document.addEventListener('DOMContentLoaded',()=>{account();installScoreHook();flushScores()});
+  const css='#lb-btn{position:fixed;top:14px;left:14px;z-index:9999;padding:9px 11px;border-radius:999px;font-size:18px}#lb-modal{display:none;position:fixed;inset:0;z-index:9998;background:#0007;align-items:center;justify-content:center;padding:16px}#lb-modal.open{display:flex}.lb-box{background:var(--card-bg,#fff);color:var(--app-text,#222);border-radius:14px;padding:20px;width:min(94vw,760px);max-height:88vh;overflow:auto}.lb-head{display:flex;justify-content:space-between}.lb-games{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:14px}.lb-game-btn{width:100%;text-align:left}.lb-game-btn.selected,.lb-type-btn.selected{background:var(--app-text);color:var(--app-bg);border-color:var(--app-text)}.lb-types{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.lb-results{border:1px solid var(--card-border,#ccc);border-radius:10px;padding:12px}.lb-row{display:grid;grid-template-columns:36px 1fr auto;gap:8px;padding:8px 0;border-top:1px solid var(--card-border,#ddd);font-size:13px}.lb-row:first-child{border-top:0}.lb-score{font-weight:700}.lb-empty{color:var(--muted);font-size:13px}';
   const style=document.createElement('style');style.textContent=css;document.head.appendChild(style);
   const btn=document.createElement('button');btn.id='lb-btn';btn.textContent='🏆';btn.title='Leaderboards';btn.setAttribute('aria-label','Leaderboards');document.body.appendChild(btn);
-  const modal=document.createElement('div');modal.id='lb-modal';modal.innerHTML=`<div class="lb-box"><div class="lb-head"><h2>🏆 Leaderboards</h2><button id="lb-close">Close</button></div><p>Choose a game, then choose its mode or difficulty when it has more than one.</p><div class="lb-games" id="lb-games"></div><div class="lb-types" id="lb-types"></div><div class="lb-results" id="lb-results">Choose a game.</div></div>`;document.body.appendChild(modal);
-  const games=[
-    {name:'Sudoku',types:['Easy','Medium','Hard'],ids:['sudoku_easy','sudoku_medium','sudoku_hard']},{name:'Memory',types:['Standard'],ids:['memory']},{name:'Tic Tac Toe',types:['Standard'],ids:['tic_tac_toe']},{name:'Snake',types:['Standard'],ids:['snake']},{name:'2048',types:['Standard'],ids:['2048']},{name:'Connect Four',types:['Standard'],ids:['connect_four']},{name:'Breakout',types:['Standard'],ids:['breakout']},{name:'Simon Says',types:['Standard'],ids:['simon_says']},{name:'Block Blast',types:['Standard'],ids:['block_blast']},{name:'Wordle',types:['Standard'],ids:['wordle']},{name:'Minesweeper',types:['Easy','Medium','Hard'],ids:['mines_easy','mines_medium','mines_hard']},{name:'Tag',types:['Standard'],ids:['tag']},{name:'Cookie Clicker',types:['Standard'],ids:['cookie_clicker']}];
-  let rows=[],selectedGame=0,selectedType=0;const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const gamesEl=()=>document.getElementById('lb-games'),typesEl=()=>document.getElementById('lb-types'),resultsEl=()=>document.getElementById('lb-results');
-  function homeView(){return Array.from(document.querySelectorAll('.view')).find(v=>v.querySelector('.grid'))||null}function isHomeVisible(){const lock=document.getElementById('lock-overlay');if(lock&&getComputedStyle(lock).display!=='none')return false;const home=homeView();return !!home&&home.classList.contains('active')}function visible(){btn.style.display=isHomeVisible()?'block':'none';if(!isHomeVisible())modal.classList.remove('open')}
-  function renderGames(){gamesEl().innerHTML=games.map((g,i)=>`<button class="lb-game-btn${i===selectedGame?' selected':''}" data-game="${i}">${esc(g.name)}</button>`).join('');gamesEl().querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>{selectedGame=Number(b.dataset.game);selectedType=0;renderGames();renderTypes();renderResults()})}
-  function renderTypes(){const g=games[selectedGame];typesEl().innerHTML=g.types.length>1?g.types.map((type,i)=>`<button class="lb-type-btn${i===selectedType?' selected':''}" data-type="${i}">${esc(type)}</button>`).join(''):'';typesEl().querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{selectedType=Number(b.dataset.type);renderTypes();renderResults()})}
-  function renderResults(){const g=games[selectedGame],gameId=g.ids[selectedType],a=rows.filter(x=>x.game_id===gameId).sort((x,y)=>Number(y.score)-Number(x.score)).slice(0,10);resultsEl().innerHTML=`<strong>${esc(g.name)}${g.types.length>1?' — '+esc(g.types[selectedType]):''}</strong>`+(a.length?a.map((x,i)=>`<div class="lb-row"><span>#${i+1}</span><span>${esc(x.account_code)}</span><span class="lb-score">${esc(x.score)}</span></div>`).join(''):'<p class="lb-empty">No scores yet.</p>')}
-  async function load(){resultsEl().textContent='Loading…';const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),5000);try{const r=await fetch(SUPABASE_URL+'/rest/v1/game_scores?select=account_code,game_id,score',{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY},signal:controller.signal});if(!r.ok)throw Error(r.status);rows=await r.json();renderGames();renderTypes();renderResults()}finally{clearTimeout(timer)}}
-  btn.onclick=()=>{if(!isHomeVisible())return;modal.classList.add('open');load().catch(()=>resultsEl().textContent='Could not load leaderboard.')};document.getElementById('lb-close').onclick=()=>modal.classList.remove('open');modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});document.addEventListener('DOMContentLoaded',visible);new MutationObserver(visible).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['style','class']});visible();
+  const modal=document.createElement('div');modal.id='lb-modal';modal.innerHTML='<div class="lb-box"><div class="lb-head"><h2>🏆 Leaderboards</h2><button id="lb-close">Close</button></div><p>Choose a game, then choose its mode or difficulty when it has more than one.</p><div class="lb-games" id="lb-games"></div><div class="lb-types" id="lb-types"></div><div class="lb-results" id="lb-results">Choose a game.</div></div>';document.body.appendChild(modal);
+  let rows=[],selectedGame=0,selectedType=0;
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const ge=()=>document.getElementById('lb-games'),te=()=>document.getElementById('lb-types'),re=()=>document.getElementById('lb-results');
+  function home(){return Array.from(document.querySelectorAll('.view')).find(v=>v.querySelector('.grid'))}
+  function onHome(){const lock=document.getElementById('lock-overlay');return (!lock||getComputedStyle(lock).display==='none')&&!!home()&&home().classList.contains('active')}
+  function visible(){btn.style.display=onHome()?'block':'none';if(!onHome())modal.classList.remove('open')}
+  function renderGames(){ge().innerHTML=games.map((g,i)=>'<button class="lb-game-btn'+(i===selectedGame?' selected':'')+'" data-game="'+i+'">'+esc(g[0])+'</button>').join('');ge().querySelectorAll('[data-game]').forEach(b=>b.onclick=()=>{selectedGame=+b.dataset.game;selectedType=0;renderGames();renderTypes();renderResults()})}
+  function renderTypes(){const g=games[selectedGame];te().innerHTML=g[1].length>1?g[1].map((x,i)=>'<button class="lb-type-btn'+(i===selectedType?' selected':'')+'" data-type="'+i+'">'+esc(x)+'</button>').join(''):'';te().querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{selectedType=+b.dataset.type;renderTypes();renderResults()})}
+  function renderResults(){const g=games[selectedGame],id=g[2][selectedType],a=rows.filter(x=>x.game_id===id).sort((x,y)=>Number(y.score)-Number(x.score)).slice(0,10);re().innerHTML='<strong>'+esc(g[0])+(g[1].length>1?' — '+esc(g[1][selectedType]):'')+'</strong>'+(a.length?a.map((x,i)=>'<div class="lb-row"><span>#'+(i+1)+'</span><span>'+esc(x.account_code)+'</span><span class="lb-score">'+esc(x.score)+'</span></div>').join(''):'<p class="lb-empty">No scores yet.</p>')}
+  async function load(){re().textContent='Loading…';const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);try{const r=await fetch(SUPABASE_URL+'/rest/v1/game_scores?select=account_code,game_id,score',{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY},signal:c.signal});if(!r.ok)throw Error(r.status);rows=await r.json();renderGames();renderTypes();renderResults()}finally{clearTimeout(t)}}
+  btn.onclick=()=>{if(!onHome())return;modal.classList.add('open');load().catch(()=>re().textContent='Could not load leaderboard.')};document.getElementById('lb-close').onclick=()=>modal.classList.remove('open');modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});document.addEventListener('DOMContentLoaded',visible);new MutationObserver(visible).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['style','class']});visible();
 })();
