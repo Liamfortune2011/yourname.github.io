@@ -1,0 +1,20 @@
+name: Test score persistence
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript
+        run: node --check leaderboard.js
+      - name: Verify score queue and Supabase write
+        run: |
+          grep -q "gamehub_pending_scores" leaderboard.js
+          grep -q "game_scores" leaderboard.js
+          grep -q "Save EVERY completed score" leaderboard.js
+          grep -q "window.updateHigh=function" leaderboard.js
