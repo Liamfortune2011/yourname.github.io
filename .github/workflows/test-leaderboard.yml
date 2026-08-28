@@ -19,21 +19,19 @@ jobs:
           test -f leaderboard.js
           grep -q "leaderboard" index.html
           node --check leaderboard.js
+      - name: Verify leaderboard score queue and deduplication
+        run: |
+          grep -q "gamehub_pending_scores" leaderboard.js
+          grep -q "game_scores" leaderboard.js
+          grep -q "window.saveGameHubScore=queueScore" leaderboard.js
+          grep -q "function installScoreHook" leaderboard.js
+          grep -q "const best=new Map()" leaderboard.js
+          if grep -q "setInterval(flushScores,5000)" leaderboard.js; then
+            echo "Old score polling loop is still present"
+            exit 1
+          fi
       - name: Verify per-game leaderboard definitions
         run: |
-          grep -q "sudoku_easy" leaderboard.js
-          grep -q "sudoku_medium" leaderboard.js
-          grep -q "sudoku_hard" leaderboard.js
-          grep -q "mines_easy" leaderboard.js
-          grep -q "mines_medium" leaderboard.js
-          grep -q "mines_hard" leaderboard.js
-          grep -q "2048" leaderboard.js
-          grep -q "snake" leaderboard.js
-          grep -q "tic_tac_toe" leaderboard.js
-          grep -q "connect_four" leaderboard.js
-          grep -q "breakout" leaderboard.js
-          grep -q "simon_says" leaderboard.js
-          grep -q "block_blast" leaderboard.js
-          grep -q "wordle" leaderboard.js
-          grep -q "tag" leaderboard.js
-          grep -q "cookie_clicker" leaderboard.js
+          for game in sudoku_easy sudoku_medium sudoku_hard mines_easy mines_medium mines_hard 2048 snake tic_tac_toe connect_four breakout simon_says block_blast wordle tag cookie_clicker; do
+            grep -q "$game" leaderboard.js
+          done
