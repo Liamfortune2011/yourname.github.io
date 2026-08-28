@@ -4,17 +4,11 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 INDEX = ROOT / 'index.html'
 GAMES = ROOT / 'games'
-GAME_NAMES = ['SUDOKU','MEMORY MATCH','TIC TAC TOE','SNAKE','2048','CONNECT FOUR','BREAKOUT','SIMON SAYS','BLOCK BLAST','WORDLE','MINESWEEPER','TAG','COOKIE CLICKER']
+GAME_NAMES = ['SUDOKU','MEMORY MATCH','TIC TAC TOE','SNAKE','2048','CONNECT FOUR','BREAKOUT','SIMON SAYS','BLOCK BLAST','WORDLE','MINESWEEPER','TAG','COOKIE CLICKER','TETRIS','AIR HOCKEY','COIN RUSH','DETECTIVE','CLIMB','DODGE','GRAVITY SWITCH','15 PUZZLE','NINJA RUN','BASKET RANDOM','CROSSY ROAD','BITLIFE','PAPER.IO','SNAKE.IO','SUPER MARIO','SUBAWAY RUNNERS']
 
-# Work only from the refactor branch's current index.html. Once the games have
-# been extracted, running this script again must be idempotent and must not
-# rebuild the page from origin/main.
 text = INDEX.read_text(encoding='utf-8')
-
-# If the game modules are already referenced, the extraction has already been
-# applied. Do not try to extract the same code twice.
 if all(f'games/{re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")}.js' in text for name in GAME_NAMES):
-    print('Game modules already referenced; nothing to split.')
+    print('All configured game modules already referenced; nothing to split.')
     raise SystemExit(0)
 
 sm = re.search(r'<script>\s*', text, re.I)
@@ -29,11 +23,13 @@ js = text[ss:se]
 markers = []
 for name in GAME_NAMES:
     m = re.search(r'/\*\s*=+\s*' + re.escape(name) + r'\s*=+\s*\*/', js, re.I)
-    if not m:
-        raise SystemExit(f'Missing game marker: {name}')
-    markers.append((m.start(), name))
-markers.sort()
+    if m:
+        markers.append((m.start(), name))
 
+if not markers:
+    raise SystemExit('No configured game markers found in the current index.html')
+
+markers.sort()
 GAMES.mkdir(exist_ok=True)
 sections = []
 for i, (start, name) in enumerate(markers):
