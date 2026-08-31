@@ -26,6 +26,7 @@ jobs:
           grep -q "window.saveGameHubScore=queueScore" leaderboard.js
           grep -q "function installScoreHook" leaderboard.js
           grep -q "const best=new Map()" leaderboard.js
+          grep -q "const hookTimer=setInterval" leaderboard.js
           if grep -q "setInterval(flushScores,5000)" leaderboard.js; then
             echo "Old score polling loop is still present"
             exit 1
