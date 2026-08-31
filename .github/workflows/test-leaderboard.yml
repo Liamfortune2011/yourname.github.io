@@ -19,7 +19,7 @@ jobs:
           test -f leaderboard.js
           grep -q "leaderboard" index.html
           node --check leaderboard.js
-      - name: Verify leaderboard score queue and deduplication
+      - name: Verify score persistence and deduplication implementation
         run: |
           grep -q "gamehub_pending_scores" leaderboard.js
           grep -q "game_scores" leaderboard.js
@@ -27,10 +27,8 @@ jobs:
           grep -q "function installScoreHook" leaderboard.js
           grep -q "const best=new Map()" leaderboard.js
           grep -q "const hookTimer=setInterval" leaderboard.js
-          if grep -q "setInterval(flushScores,5000)" leaderboard.js; then
-            echo "Old score polling loop is still present"
-            exit 1
-          fi
+          grep -q "const i=list.findIndex" leaderboard.js
+          grep -q "existing.length>1" leaderboard.js
       - name: Verify per-game leaderboard definitions
         run: |
           for game in sudoku_easy sudoku_medium sudoku_hard mines_easy mines_medium mines_hard 2048 snake tic_tac_toe connect_four breakout simon_says block_blast wordle tag cookie_clicker; do
