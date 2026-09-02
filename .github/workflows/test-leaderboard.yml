@@ -1,6 +1,8 @@
 name: Test leaderboard changes
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -48,10 +50,13 @@ jobs:
           done
       - name: Verify extra game modules
         run: |
-          for file in games/racing.js games/tetris.js games/airhockey.js games/coinrush.js games/detective.js games/climb.js games/dodge.js games/gravity.js games/puzzle15.js games/extra-loader.js; do
+          for file in games/racing.js games/tetris.js games/airhockey.js games/coinrush.js games/detective.js games/climb.js games/dodge.js games/gravity.js games/puzzle15.js games/ninja.js games/basket.js games/crossy.js games/bitlife.js games/paperio.js games/snakeio.js games/mario.js games/subaway.js games/extra-loader.js; do
             test -f "$file"
             node --check "$file"
           done
           grep -q '"id":"dodge"' games/extra-loader.js
-          grep -q '"id":"gravity"' games/extra-loader.js
-          grep -q '"id":"puzzle15"' games/extra-loader.js
+          grep -q '"id":"gravity"' games/extra-loader.js || grep -q "'gravity'" games/extra-loader.js
+          grep -q '"id":"puzzle15"' games/extra-loader.js || grep -q "'puzzle15'" games/extra-loader.js
+          for game in ninja basket crossy bitlife paperio snakeio mario subaway; do
+            grep -q "'$game'" games/extra-loader.js || grep -q '"'$game'"' games/extra-loader.js
+          done
