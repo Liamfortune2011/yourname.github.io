@@ -28,7 +28,9 @@ jobs:
           grep -q "const best=new Map()" leaderboard.js
           grep -q "const hookTimer=setInterval" leaderboard.js
           grep -q "const i=list.findIndex" leaderboard.js
-          grep -q "existing.length>1" leaderboard.js
+          grep -q "if(existing.length)" leaderboard.js
+          grep -q "window.__GAMEHUB_LEADERBOARD_LOADED" leaderboard.js
+          ! grep -q "new MutationObserver" leaderboard.js
       - name: Verify per-game leaderboard definitions
         run: |
           for game in sudoku_easy sudoku_medium sudoku_hard mines_easy mines_medium mines_hard 2048 snake tic_tac_toe connect_four breakout simon_says block_blast wordle tag cookie_clicker; do
