@@ -45,15 +45,20 @@ jobs:
           NODE
       - name: Verify per-game leaderboard definitions
         run: |
-          for game in sudoku_easy sudoku_medium sudoku_hard mines_easy mines_medium mines_hard 2048 snake tic_tac_toe connect_four breakout simon_says block_blast wordle tag cookie_clicker; do
+          for game in sudoku_easy sudoku_medium sudoku_hard mines_easy mines_medium mines_hard 2048 snake tic_tac_toe connect_four breakout simon_says block_blast wordle tag cookie_clicker top_down_racing tetris air_hockey coin_rush detective climb dodge gravity_switch 15_puzzle ninja_run basket_random snake_io bitlife; do
             grep -q "$game" leaderboard.js
           done
-      - name: Verify extra game modules
+      - name: Verify extra game modules and bug fixes
         run: |
-          for file in games/racing.js games/tetris.js games/airhockey.js games/coinrush.js games/detective.js games/climb.js games/dodge.js games/gravity.js games/puzzle15.js games/ninja.js games/basket.js games/crossy.js games/bitlife.js games/paperio.js games/snakeio.js games/mario.js games/subaway.js games/extra-loader.js; do
+          for file in games/racing.js games/tetris.js games/airhockey.js games/coinrush.js games/detective.js games/climb.js games/dodge.js games/gravity.js games/puzzle15.js games/ninja.js games/basket.js games/crossy.js games/bitlife.js games/paperio.js games/snakeio.js games/mario.js games/subaway.js games/extra-loader.js games/ui-fixes.js; do
             test -f "$file"
             node --check "$file"
           done
           for game in racing tetris airhockey coinrush detective climb dodge gravity puzzle15 ninja basket crossy bitlife paperio snakeio mario subaway; do
             grep -q "'$game'" games/extra-loader.js
           done
+          grep -q 'cookie-reset-fix' games/ui-fixes.js
+          grep -q 'safeBotSpawn' games/snakeio.js
+          grep -q 'angleTravel' games/racing.js
+          grep -q 'jumpPow=650' games/basket.js
+          grep -q 'Science Club' games/bitlife.js
