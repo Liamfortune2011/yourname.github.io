@@ -21,18 +21,29 @@ jobs:
           node --check leaderboard.js
       - name: Verify score persistence and deduplication implementation
         run: |
-          grep -q "gamehub_pending_scores" leaderboard.js
-          grep -q "game_scores" leaderboard.js
-          grep -q "window.saveGameHubScore=queueScore" leaderboard.js
-          grep -q "function installScoreHook" leaderboard.js
-          grep -q "const best=new Map()" leaderboard.js
-          grep -q "const hookTimer=setInterval" leaderboard.js
-          grep -q "const i=list.findIndex" leaderboard.js
-          grep -q "if(existing.length)" leaderboard.js
-          grep -q "window.__GAMEHUB_LEADERBOARD_LOADED" leaderboard.js
-          ! grep -q "new MutationObserver" leaderboard.js
+          node - <<'NODE'
+          const fs=require('fs');
+          const s=fs.readFileSync('leaderboard.js','utf8');
+          const required=[
+            'gamehub_pending_scores','game_scores','window.saveGameHubScore=queueScore',
+            'function installScoreHook','const best=new Map()','const hookTimer=setInterval',
+            'const i=list.findIndex','if(existing.length)','window.__GAMEHUB_LEADERBOARD_LOADED'
+          ];
+          for(const x of required){if(!s.includes(x))throw new Error('Missing leaderboard requirement: '+x)}
+          if(s.includes('new MutationObserver'))throw new Error('MutationObserver regression detected');
+          console.log('Leaderboard implementation checks passed');
+          NODE
       - name: Verify per-game leaderboard definitions
         run: |
           for game in sudoku_easy sudoku_medium sudoku_hard mines_easy mines_medium mines_hard 2048 snake tic_tac_toe connect_four breakout simon_says block_blast wordle tag cookie_clicker; do
             grep -q "$game" leaderboard.js
           done
+      - name: Verify extra game modules
+        run: |
+          for file in games/racing.js games/tetris.js games/airhockey.js games/coinrush.js games/detective.js games/climb.js games/dodge.js games/gravity.js games/puzzle15.js games/extra-loader.js; do
+            test -f "$file"
+            node --check "$file"
+          done
+          grep -q '"id":"dodge"' games/extra-loader.js
+          grep -q '"id":"gravity"' games/extra-loader.js
+          grep -q '"id":"puzzle15"' games/extra-loader.js
