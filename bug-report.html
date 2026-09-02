@@ -8,14 +8,14 @@
   *{box-sizing:border-box}
   :root{--bg:#f4f3ee;--text:#2c2c2a;--card:#fff;--border:#d3d1c7;--muted:#5f5e5a;--hover:#ecece6}
   body.dark{--bg:#1c1c1a;--text:#ece9e2;--card:#29281f;--border:#46453c;--muted:#b0aea3;--hover:#35342c}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:2.5rem 1rem;min-height:100vh;display:flex;justify-content:center;align-items:flex-start}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:2.5rem 1rem;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;transition:background .15s,color .15s}
   .box{width:min(92vw,560px);background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;text-align:center;margin-top:5vh}
   .bug{font-size:42px;margin-bottom:8px}
   h1{font-size:24px;margin:0 0 8px}
   p{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 1.25rem}
   .report{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border:1px solid var(--border);border-radius:9px;background:var(--text);color:var(--bg);text-decoration:none;font-weight:600;font-size:14px}
   .report:hover{opacity:.85}
-  .back{display:block;margin-top:16px;color:var(--muted);font-size:13px;text-decoration:none}
+  .back{display:block;margin-top:16px;color:var(--muted);font-size:13px;text-decoration:none;cursor:pointer}
   .back:hover{color:var(--text)}
 </style>
 </head>
@@ -25,7 +25,19 @@
     <h1>Send Bugs Here</h1>
     <p>Found a bug or something that isn't working right? Please use the form below to report it so it can be fixed.</p>
     <a class="report" href="https://docs.google.com/forms/d/e/1FAIpQLScyyiB5cmidWk10GvLgXs4TUa32PhuI_n6jxM_QUfUWHoZO6w/viewform?usp=header" target="_blank" rel="noopener noreferrer">🐛 Send a Bug Report</a>
-    <a class="back" href="index.html">← Back to Game Hub</a>
+    <a class="back" id="back-to-hub">← Back to Game Hub</a>
   </main>
+<script>
+(function(){
+  var theme=localStorage.getItem('gamehub_theme');
+  if(theme==='dark')document.body.classList.add('dark');
+  else if(theme==='light')document.body.classList.remove('dark');
+
+  document.getElementById('back-to-hub').addEventListener('click',function(){
+    if(window.history.length>1)window.history.back();
+    else window.location.href='index.html';
+  });
+})();
+</script>
 </body>
 </html>
