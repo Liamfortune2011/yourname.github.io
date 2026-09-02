@@ -18,4 +18,11 @@ jobs:
           grep -q "game_scores" leaderboard.js
           grep -q "window.saveGameHubScore=queueScore" leaderboard.js
           grep -q "function installScoreHook" leaderboard.js
-          grep -q "setInterval(flushScores,5000)" leaderboard.js
+          grep -q "async function flushScores" leaderboard.js
+          grep -q "async function saveOne" leaderboard.js
+          grep -q "method:'POST'" leaderboard.js
+          grep -q "method:'PATCH'" leaderboard.js
+          grep -q "method:'DELETE'" leaderboard.js
+          grep -q "const i=list.findIndex" leaderboard.js
+          grep -q "window.__GAMEHUB_LEADERBOARD_LOADED" leaderboard.js
+          ! grep -q "new MutationObserver" leaderboard.js

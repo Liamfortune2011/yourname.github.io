@@ -1,0 +1,87 @@
+name: Leaderboard browser test
+
+on:
+  push:
+    branches:
+      - fix/leaderboard-stability
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check leaderboard.js
+          for f in games/*.js; do node --check "$f"; done
+
+      - name: Start local server
+        run: python3 -m http.server 4173 >/tmp/gamehub-server.log 2>&1 &
+
+      - name: Test leaderboard open/close and duplicate rendering
+        run: |
+          cat > /tmp/leaderboard-test.js <<'EOF'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage();
+            await page.addInitScript(() => {
+              const realFetch = window.fetch.bind(window);
+              window.fetch = async (input, init) => {
+                const url = typeof input === 'string' ? input : input.url;
+                if (url.includes('/rest/v1/game_scores')) {
+                  const rows = Array.from({length:10}, (_, i) => ({
+                    account_code: 'TESTUSER',
+                    game_id: 'sudoku_easy',
+                    score: i === 9 ? 250 : 100 + i
+                  }));
+                  return new Response(JSON.stringify(rows), {status:200, headers:{'Content-Type':'application/json'}});
+                }
+                return realFetch(input, init);
+              };
+            });
+            await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'domcontentloaded'});
+            await page.waitForSelector('#lb-btn');
+            await page.evaluate(() => {
+              const lock = document.getElementById('lock-overlay');
+              if (lock) { lock.style.display = 'none'; lock.classList.add('hidden'); }
+              const hub = document.getElementById('view-hub');
+              if (hub) hub.classList.add('active');
+            });
+            const btn = page.locator('#lb-btn');
+            await btn.click();
+            await page.locator('#lb-modal.open').waitFor();
+            await page.locator('#lb-close').click();
+            await btn.click();
+            await page.locator('#lb-modal.open').waitFor();
+            await page.locator('#lb-close').click();
+            await btn.click();
+            await page.locator('#lb-modal.open').waitFor();
+            await page.waitForTimeout(300);
+            const rows = page.locator('.lb-row');
+            const count = await rows.count();
+            if (count !== 1) throw new Error(`Expected 1 deduplicated row, got ${count}`);
+            const score = await rows.locator('.lb-score').textContent();
+            if (score.trim() !== '250') throw new Error(`Expected highest score 250, got ${score}`);
+            console.log('Leaderboard browser test passed: repeated open/close remained responsive and duplicate rows collapsed to one highest score.');
+            await browser.close();
+          })().catch(err => { console.error(err); process.exit(1); });
+          EOF
+          node /tmp/leaderboard-test.js
