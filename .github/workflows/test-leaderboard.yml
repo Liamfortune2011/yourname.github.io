@@ -21,16 +21,24 @@ jobs:
           node --check leaderboard.js
       - name: Verify score persistence and deduplication implementation
         run: |
-          node - <<'NODE'
+          node <<'NODE'
           const fs=require('fs');
           const s=fs.readFileSync('leaderboard.js','utf8');
           const required=[
-            'gamehub_pending_scores','game_scores','window.saveGameHubScore=queueScore',
-            'function installScoreHook','const best=new Map()','const hookTimer=setInterval',
-            'const i=list.findIndex','if(existing.length)','window.__GAMEHUB_LEADERBOARD_LOADED'
+            /gamehub_pending_scores/,
+            /game_scores/,
+            /window\.saveGameHubScore\s*=\s*queueScore/,
+            /function installScoreHook/,
+            /const best=new Map\(\)/,
+            /const hookTimer=setInterval/,
+            /findIndex\(x=>x\.account_code===item\.account_code&&x\.game_id===item\.game_id\)/,
+            /if\(existing\.length\)/,
+            /window\.__GAMEHUB_LEADERBOARD_LOADED/
           ];
-          for(const x of required){if(!s.includes(x))throw new Error('Missing leaderboard requirement: '+x)}
-          if(s.includes('new MutationObserver'))throw new Error('MutationObserver regression detected');
+          for(const pattern of required){
+            if(!pattern.test(s)) throw new Error('Missing leaderboard requirement: '+pattern);
+          }
+          if(/new MutationObserver/.test(s)) throw new Error('MutationObserver regression detected');
           console.log('Leaderboard implementation checks passed');
           NODE
       - name: Verify per-game leaderboard definitions
