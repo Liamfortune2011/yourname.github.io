@@ -54,9 +54,6 @@ jobs:
             test -f "$file"
             node --check "$file"
           done
-          grep -q '"id":"dodge"' games/extra-loader.js
-          grep -q '"id":"gravity"' games/extra-loader.js || grep -q "'gravity'" games/extra-loader.js
-          grep -q '"id":"puzzle15"' games/extra-loader.js || grep -q "'puzzle15'" games/extra-loader.js
-          for game in ninja basket crossy bitlife paperio snakeio mario subaway; do
-            grep -q "'$game'" games/extra-loader.js || grep -q '"'$game'"' games/extra-loader.js
+          for game in racing tetris airhockey coinrush detective climb dodge gravity puzzle15 ninja basket crossy bitlife paperio snakeio mario subaway; do
+            grep -q "'$game'" games/extra-loader.js
           done
