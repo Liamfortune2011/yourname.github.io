@@ -1,43 +1,18 @@
 (function(){
   if(window.__GAMEHUB_UI_FIXES__)return;
   window.__GAMEHUB_UI_FIXES__=true;
-
   var style=document.createElement('style');
-  style.textContent='\n/* Game Hub UI fixes */\n#view-cookie #cookie-reset-btn{display:block!important;width:max-content!important;min-width:0!important;max-width:none!important;flex:0 0 auto!important;align-self:center!important;padding:8px 14px!important;white-space:nowrap!important;box-sizing:border-box!important}\n#view-cookie .cookie-left>button#cookie-reset-btn{width:max-content!important}\n#view-cookie .cookie-item{width:100%;max-width:100%;box-sizing:border-box}\n#view-cookie .cookie-upg{width:42px!important;height:42px!important;min-width:42px}\n.extra-pack .extra-game-card{width:auto;min-width:0}\n#bug-report-btn{position:fixed;top:14px;right:62px;z-index:500;border-radius:50%;width:40px;height:40px;padding:0;font-size:18px;display:inline-flex;align-items:center;justify-content:center}\n#bug-report-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.55);box-sizing:border-box}\n#bug-report-modal.open{display:flex}\n#bug-report-modal .bug-modal-box{width:min(460px,100%);background:var(--card-bg,#fff);color:var(--app-text,#222);border:1px solid var(--card-border,#ccc);border-radius:16px;padding:24px;box-sizing:border-box;box-shadow:0 18px 50px rgba(0,0,0,.3);text-align:center}\n#bug-report-modal h2{margin:0 0 8px}\n#bug-report-modal p{margin:0 0 18px;color:var(--muted,#666)}\n#bug-report-modal .bug-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}\n#bug-report-modal a,#bug-report-modal button{width:auto!important;min-width:0!important}\n';
+  style.textContent='\n/* Game Hub UI fixes */\n#view-cookie .cookie-item{width:100%;max-width:100%;box-sizing:border-box}\n#view-cookie .cookie-upg{width:42px!important;height:42px!important;min-width:42px}\n#view-cookie .cookie-left button.cookie-reset-fix{display:block!important;width:max-content!important;min-width:0!important;max-width:none!important;flex:0 0 auto!important;align-self:center!important;padding:8px 14px!important;white-space:nowrap!important;box-sizing:border-box!important}\n.extra-pack .extra-game-card{width:auto;min-width:0}\n#bug-report-btn{position:fixed;top:14px;right:62px;z-index:500;border-radius:50%;width:40px;height:40px;padding:0;font-size:18px;display:inline-flex;align-items:center;justify-content:center}\n#bug-report-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.55);box-sizing:border-box}\n#bug-report-modal.open{display:flex}\n#bug-report-modal .bug-modal-box{width:min(460px,100%);background:var(--card-bg,#fff);color:var(--app-text,#222);border:1px solid var(--card-border,#ccc);border-radius:16px;padding:24px;box-sizing:border-box;box-shadow:0 18px 50px rgba(0,0,0,.3);text-align:center}\n#bug-report-modal h2{margin:0 0 8px}\n#bug-report-modal p{margin:0 0 18px;color:var(--muted,#666)}\n#bug-report-modal .bug-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}\n#bug-report-modal a,#bug-report-modal button{width:auto!important;min-width:0!important}\n';
   document.head.appendChild(style);
-
+  function fixCookieButton(){var v=document.getElementById('view-cookie');if(!v)return;v.querySelectorAll('button').forEach(function(b){var t=(b.textContent||'').trim().toLowerCase();if(t.indexOf('reset')>=0||t.indexOf('start over')>=0){b.classList.add('cookie-reset-fix')}})}
   function addBugModal(){
     if(document.getElementById('bug-report-modal'))return;
-    var modal=document.createElement('div');
-    modal.id='bug-report-modal';
+    var modal=document.createElement('div');modal.id='bug-report-modal';
     modal.innerHTML='<div class="bug-modal-box" role="dialog" aria-modal="true" aria-labelledby="bug-report-title"><h2 id="bug-report-title">🐛 Send Bugs Here</h2><p>Found a bug or something not working right? Send it here so it can be fixed.</p><div class="bug-actions"><a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLScyyiB5cmidWk10GvLgXs4TUa32PhuI_n6jxM_QUfUWHoZO6w/viewform?usp=header" target="_blank" rel="noopener">🐛 Send a Bug Report</a><button type="button" id="bug-report-close">Close</button></div></div>';
-    document.body.appendChild(modal);
-    var close=document.getElementById('bug-report-close');
-    close.addEventListener('click',function(){modal.classList.remove('open')});
-    modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('open')});
-    document.addEventListener('keydown',function(e){if(e.key==='Escape')modal.classList.remove('open')});
+    document.body.appendChild(modal);document.getElementById('bug-report-close').addEventListener('click',function(){modal.classList.remove('open')});modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('open')});document.addEventListener('keydown',function(e){if(e.key==='Escape')modal.classList.remove('open')});
   }
-
   function addBugButton(){
-    if(document.getElementById('bug-report-btn'))return;
-    var settings=document.getElementById('settings-btn');
-    if(!settings)return;
-    var btn=document.createElement('button');
-    btn.id='bug-report-btn';
-    btn.type='button';
-    btn.title='Report a bug';
-    btn.setAttribute('aria-label','Report a bug');
-    btn.textContent='🐛';
-    btn.addEventListener('click',function(){
-      addBugModal();
-      document.getElementById('bug-report-modal').classList.add('open');
-    });
-    settings.parentNode.insertBefore(btn,settings);
+    if(document.getElementById('bug-report-btn'))return;var settings=document.getElementById('settings-btn');if(!settings)return;var btn=document.createElement('button');btn.id='bug-report-btn';btn.type='button';btn.title='Report a bug';btn.setAttribute('aria-label','Report a bug');btn.textContent='🐛';btn.addEventListener('click',function(){addBugModal();document.getElementById('bug-report-modal').classList.add('open')});settings.parentNode.insertBefore(btn,settings);
   }
-
-  addBugModal();
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addBugButton);
-  else addBugButton();
-  setTimeout(addBugButton,500);
-  setTimeout(addBugButton,1500);
+  addBugModal();fixCookieButton();if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){fixCookieButton();addBugButton()});else addBugButton();setTimeout(function(){fixCookieButton();addBugButton()},500);setTimeout(function(){fixCookieButton();addBugButton()},1500);
 })();
