@@ -29,7 +29,7 @@ jobs:
             /game_scores/,
             /window\.saveGameHubScore\s*=\s*queueScore/,
             /function installScoreHook/,
-            /const best\s*=\s*new Map\(\)/,
+            /best\s*=\s*new Map\(\)/,
             /const hookTimer\s*=\s*setInterval/,
             /findIndex\(x=>x\.account_code===item\.account_code&&x\.game_id===item\.game_id\)/,
             /if\(existing\.length\)/,
