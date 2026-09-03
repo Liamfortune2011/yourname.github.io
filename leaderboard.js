@@ -44,6 +44,7 @@
 
   const lowerBetter=new Set([
     'sudoku_easy','sudoku_medium','sudoku_hard','sudoku_extra',
+    'mines_easy','mines_medium','mines_hard',
     'memory','reaction_test','wordle'
   ]);
   const better=(a,b,higher)=>higher ? a>b : a<b;
