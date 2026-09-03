@@ -5,6 +5,10 @@
     var snake, dir, dirQueue, foods, score, loopId, over, running, speed = 110;
     var snakeColor = '#2c2c2a', bgColor = '#ffffff', foodStyle = 'dot', foodCount = 3, wrapWalls = false;
 
+    function snakeScoreKey(){
+      return ({170:'snake_slow',110:'snake_medium',70:'snake_fast',40:'snake_extreme'})[speed] || 'snake_medium';
+    }
+
     window.newSnakeGame = function(){
       canvas = document.getElementById('snake-canvas');
       ctx = canvas.getContext('2d');
@@ -16,7 +20,7 @@
       score = 0; over = false; running = false;
       foods = [];
       scoreEl.textContent = 0;
-      bestEl.textContent = getHigh('snake') || 0;
+      bestEl.textContent = getHigh(snakeScoreKey()) || 0;
       msgEl.textContent = 'Press a direction to start';
       for(var i=0;i<foodCount;i++) placeFood();
       draw();
@@ -63,7 +67,9 @@
       if(hitWall || snake.some(function(s){ return s.x===head.x && s.y===head.y; })){
         over = true;
         clearInterval(loopId);
-        bestEl.textContent = updateHigh('snake', score, true);
+        var key = snakeScoreKey();
+        bestEl.textContent = updateHigh(key, score, true);
+        if(typeof window.saveGameHubScore==='function') window.saveGameHubScore(key, score, true);
         msgEl.textContent = 'Game over — score ' + score;
         return;
       }
