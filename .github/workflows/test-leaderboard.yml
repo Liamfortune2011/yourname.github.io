@@ -21,7 +21,7 @@ jobs:
           test -f leaderboard.js
           grep -q "leaderboard" index.html
           node --check leaderboard.js
-      - name: Verify score persistence and deduplication implementation
+      - name: Verify score persistence, deduplication, and score direction
         run: |
           node <<'NODE'
           const fs=require('fs');
@@ -35,6 +35,9 @@ jobs:
             /const hookTimer\s*=\s*setInterval/,
             /findIndex\(x=>x\.account_code===item\.account_code&&x\.game_id===item\.game_id\)/,
             /if\(existing\.length\)/,
+            /higherIsBetter/,
+            /mines_easy.*mines_medium.*mines_hard/s,
+            /snake_slow.*snake_medium.*snake_fast.*snake_extreme/s,
             /window\.__GAMEHUB_LEADERBOARD_LOADED/
           ];
           for(const pattern of required){
@@ -43,9 +46,9 @@ jobs:
           if(/new MutationObserver/.test(s)) throw new Error('MutationObserver regression detected');
           console.log('Leaderboard implementation checks passed');
           NODE
-      - name: Verify per-game leaderboard definitions
+      - name: Verify every configured game leaderboard
         run: |
-          for game in sudoku_easy sudoku_medium sudoku_hard mines_easy mines_medium mines_hard 2048 snake tic_tac_toe connect_four breakout simon_says block_blast wordle tag cookie_clicker top_down_racing tetris air_hockey coin_rush detective climb dodge gravity_switch 15_puzzle ninja_run basket_random snake_io bitlife; do
+          for game in sudoku_easy sudoku_medium sudoku_hard sudoku_extra mines_easy mines_medium mines_hard memory tic_tac_toe snake_slow snake_medium snake_fast snake_extreme 2048 connect_four whack_a_mole simon_says tag cookie_clicker pong breakout reaction_test top_down_racing tetris air_hockey coin_rush detective climb dodge gravity_switch 15_puzzle ninja_run basket_random crossy_road bitlife paper_io snake_io subaway_runners super_mario block_blast wordle; do
             grep -q "$game" leaderboard.js
           done
       - name: Verify extra game modules and bug fixes
