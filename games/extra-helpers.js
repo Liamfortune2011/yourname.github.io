@@ -6,6 +6,30 @@
   window.rafGame=window.rafGame||function(loop){var id=0,last=performance.now(),stopped=false;function f(t){if(stopped)return;var dt=Math.min(.035,(t-last)/1000);last=t;var result=loop(dt,t);if(result===false){stopped=true;return}id=requestAnimationFrame(f)}id=requestAnimationFrame(f);return function(){stopped=true;cancelAnimationFrame(id)}};
   window.confirmReset=window.confirmReset||function(fn){if(typeof fn==='function')fn()};
 
+  /* Capture the login code before the lock-screen handler clears its input. */
+  var VALID_ACCOUNTS={'021911':1,'072211':1,'120910':1};
+  function captureAccount(codeValue){
+    var c=String(codeValue||'').trim();
+    if(VALID_ACCOUNTS[c]){
+      window.gameHubAccountCode=c;
+      try{localStorage.setItem('gamehub_account_code',c)}catch(e){}
+      return true;
+    }
+    return false;
+  }
+  document.addEventListener('click',function(e){
+    if(e.target&&e.target.id==='lock-submit'){
+      var input=document.getElementById('lock-input');
+      if(input)captureAccount(input.value);
+    }
+  },true);
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){
+      var input=document.getElementById('lock-input');
+      if(input&&document.activeElement===input)captureAccount(input.value);
+    }
+  },true);
+
   var SB='https://gywrmkluncycfxeffypc.supabase.co';
   var KEY='sb_publishable_LI8-YNwApCJSVL2EkB7dzA_ZIBLxe3s';
   var aliases={racing:'top_down_racing',airhockey:'air_hockey',coinrush:'coin_rush',gravity:'gravity_switch',puzzle15:'15_puzzle',ninja:'ninja_run',basket:'basket_random',crossy:'crossy_road',paperio:'paper_io',snakeio:'snake_io',mario:'super_mario',subaway:'subaway_runners'};
