@@ -53,6 +53,7 @@
   var done={};
   function once(k,s,h){if(!Number.isFinite(s)||s<0)return;var key=k+':'+s;if(done[key])return;done[key]=1;window.saveGameHubScore(k,s,h)}
   function text(id){var e=window.by(id);return e?(e.textContent||''):''}
+  function snakeKey(){var b=document.querySelector('.snake-speed-btn.active');var s=b?Number(b.dataset.speed):110;return ({170:'snake_slow',110:'snake_medium',70:'snake_fast',40:'snake_extreme'})[s]||'snake_medium'}
   function check(){
     if(!acct())return;
     var m=text('racing-msg');if(text('race-lap')==='3'&&m.indexOf('Finished')>=0){var t=parseFloat(text('race-time'));if(Number.isFinite(t))once('racing',Math.max(0,Math.round(10000-t*100)),true)}
@@ -67,9 +68,10 @@
     if(/wins/i.test(text('br-msg')))once('basket',parseFloat(text('br-p1'))||0,true);
     if(/score/i.test(text('cr-msg')))once('crossy',parseFloat(text('cr-score'))||0,true);
     if(/cut off/i.test(text('pi-msg')))once('paperio',parseFloat(text('pi-best'))||0,true);
-    if(/crashed/i.test(text('si-msg')))once('snakeio',parseFloat(text('si-score'))||0,true);
-    if(/beat all|game over|time up/i.test(text('sm-msg')))once('mario',parseFloat(text('sm-score'))||0,true);
+    if(/crashed/i.test(text('si-msg')))once('snakeio',parseFloat(text('si-len'))||0,true);
+    if(/beat all|game over|time up/i.test(text('sm-msg')))once('mario',parseFloat(text('sm-coins'))||0,true);
     if(/run over|game over/i.test(text('sr-msg')))once('subaway',parseFloat(text('sr-score'))||0,true);
+    if(/game over/i.test(text('snake-msg'))){var s=parseFloat(text('snake-score-val'));if(Number.isFinite(s))once(snakeKey(),s,true)}
     flush();
   }
   setInterval(check,1000);
